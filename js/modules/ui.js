@@ -52,11 +52,11 @@ function renderClientsPage() {
     statsEl.className = 'header-stats';
     statsContainer.prepend(statsEl);
   }
-  statsEl.innerHTML = `<span>Total clients: <strong>${clients.length}</strong></span>`;
+  statsEl.innerHTML = `<span>Всего клиентов: <strong>${clients.length}</strong></span>`;
 
 
   if (clients.length === 0) {
-    container.innerHTML = '<div class="empty-state"><p>No clients yet.</p></div>';
+    container.innerHTML = '<div class="empty-state"><p>Клиентов нет.</p></div>';
     return;
   }
 
@@ -71,10 +71,10 @@ function renderClientsPage() {
             ${formatPlate(client.licensePlate || '')}
           </div>
           <div class="client-actions">
-            <button class="btn btn-secondary btn-sm" data-action="edit-client" data-id="${client.id}" title="Edit">
+            <button class="btn btn-secondary btn-sm" data-action="edit-client" data-id="${client.id}" title="Редактировать">
               <i class="fas fa-pen"></i>
             </button>
-            <button class="btn btn-secondary btn-sm" data-action="view-client-history" data-id="${client.id}" title="Client History">
+            <button class="btn btn-secondary btn-sm" data-action="view-client-history" data-id="${client.id}" title="История клиента">
               <i class="fas fa-history"></i>
             </button>
           </div>
@@ -100,11 +100,11 @@ function renderOrderStats(orders) {
     <div class="stats-grid">
       <div class="stat-item">
         <div class="stat-value">${todoCount}</div>
-        <div class="stat-label">To Do</div>
+        <div class="stat-label">Сделать</div>
       </div>
       <div class="stat-item">
         <div class="stat-value">${doneCount}</div>
-        <div class="stat-label">Done</div>
+        <div class="stat-label">Сделано</div>
       </div>
     </div>
   `;
@@ -118,7 +118,7 @@ export function renderOrdersPage() {
 
     if (isPrivileged()) {
         filterContainer.style.display = 'flex';
-        masterFilter.innerHTML = '<option value="all">All Masters</option>';
+        masterFilter.innerHTML = '<option value="all">Все мастера</option>';
         (state.masters || []).forEach(name => {
             masterFilter.innerHTML += `<option value="${name}">${name}</option>`;
         });
@@ -155,7 +155,7 @@ export function renderArchivePage() {
         renderOrdersList(container, filteredOrders);
     } else {
         if (!state.data.history?.length) {
-            container.innerHTML = '<div class="empty-state"><p>Archive is empty.</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>Архив пуст.</p></div>';
             return;
         }
 
@@ -167,11 +167,11 @@ export function renderArchivePage() {
             return `
                 <div class="week-summary-item" data-action="view-archived-week" data-week-id="${week.weekId}">
                     <div class="week-summary-header">
-                        <span class="week-date">Week: ${firstOrderDate} - ${lastOrderDate}</span>
+                        <span class="week-date">Неделя: ${firstOrderDate} - ${lastOrderDate}</span>
                         <span class="week-revenue">${formatCurrency(weekRevenue)}</span>
                     </div>
                     <div class="week-summary-meta">
-                        <span>Orders: ${week.orders.length}</span>
+                        <span>Заказ-нарядов: ${week.orders.length}</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                 </div>`;
@@ -182,7 +182,7 @@ export function renderArchivePage() {
 function renderFinancePage() {
   const container = document.getElementById('finance-content-container');
   if (!isPrivileged()) {
-    container.innerHTML = '<div class="empty-state"><p>Access denied.</p></div>';
+    container.innerHTML = '<div class="empty-state"><p>Доступ запрещен.</p></div>';
     return;
   }
 
@@ -190,7 +190,7 @@ function renderFinancePage() {
 
   let html = `
     <div class="section">
-        <div class="section-header"><h3 class="section-title">Salary and Bonus Calculation</h3></div>
+        <div class="section-header"><h3 class="section-title">Расчет зарплаты и премии</h3></div>
         <div class="salary-calculation-list">`;
 
   if (weeklyLeaderboard.length > 0) {
@@ -203,34 +203,34 @@ function renderFinancePage() {
             <span class="final-salary" data-base-salary="${baseSalary}">${formatCurrency(baseSalary)}</span>
           </div>
           <div class="salary-details">
-            <span>Revenue: <strong>${formatCurrency(master.revenue)}</strong></span>
-            <span>Base (50%): <strong>${formatCurrency(baseSalary)}</strong></span>
+            <span>Выручка: <strong>${formatCurrency(master.revenue)}</strong></span>
+            <span>База (50%): <strong>${formatCurrency(baseSalary)}</strong></span>
           </div>
           <div class="salary-actions">
-            <button class="btn btn-secondary btn-sm" data-action="award-bonus" data-master-name="${master.name}"><i class="fas fa-plus"></i> Award Bonus</button>
+            <button class="btn btn-secondary btn-sm" data-action="award-bonus" data-master-name="${master.name}"><i class="fas fa-plus"></i> Премировать</button>
           </div>
         </div>`;
     }).join('');
   } else {
-    html += '<div class="empty-state"><p>No data for calculation.</p></div>';
+    html += '<div class="empty-state"><p>Нет данных для расчета.</p></div>';
   }
 
-  html += `</div></div><div class="finance-actions"><button id="finalize-week-btn" class="btn btn-success quick-action-main"><i class="fas fa-check-circle"></i> Close Week and Finalize Payroll</button></div>`;
+  html += `</div></div><div class="finance-actions"><button id="finalize-week-btn" class="btn btn-success quick-action-main"><i class="fas fa-check-circle"></i> Закрыть неделю и начислить ЗП</button></div>`;
   container.innerHTML = html;
 
   const historyContainer = document.createElement('div');
   historyContainer.className = 'section';
-  let historyHtml = '<div class="section-header"><h3 class="section-title">Past Periods</h3></div><div class="section-content list-container">';
+  let historyHtml = '<div class="section-header"><h3 class="section-title">Прошлые периоды</h3></div><div class="section-content list-container">';
   const reportedWeeks = state.data.history.filter(h => h.salaryReport && h.salaryReport.length > 0);
 
   if (reportedWeeks.length > 0) {
       historyHtml += reportedWeeks.map(week => {
           const weekRevenue = week.orders.reduce((sum, o) => sum + o.amount, 0);
           const firstOrderDate = week.orders.length > 0 ? formatDate(week.orders[0].createdAt) : 'N/A';
-          return `<button class="btn btn-secondary btn-full-width" data-action="view-week-report" data-week-id="${week.weekId}"><span>Report for week of ${firstOrderDate}</span><span>${formatCurrency(weekRevenue)}</span></button>`;
+          return `<button class="btn btn-secondary btn-full-width" data-action="view-week-report" data-week-id="${week.weekId}"><span>Отчет за неделю от ${firstOrderDate}</span><span>${formatCurrency(weekRevenue)}</span></button>`;
       }).join('');
   } else {
-      historyHtml += '<div class="empty-state" style="padding: 16px 0;">No closed periods.</div>';
+      historyHtml += '<div class="empty-state" style="padding: 16px 0;">Нет закрытых периодов.</div>';
   }
 
   historyHtml += '</div>';
@@ -252,11 +252,11 @@ function renderDashboard() {
 
   const todayValueEl = document.querySelector('#dash-today-personal .dashboard-item-value');
   if(userIsPrivileged) {
-    document.querySelector('#dash-today-personal .dashboard-item-title').textContent = 'Revenue (Today)';
+    document.querySelector('#dash-today-personal .dashboard-item-title').textContent = 'Выручка (сегодня)';
     todayValueEl.textContent = formatCurrency((state.data.todayOrders || []).reduce((sum, o) => sum + o.amount, 0));
   } else {
     todayValueEl.textContent = formatCurrency((state.data.todayOrders || []).filter(o => o.masterName === user.name).reduce((sum, o) => sum + o.amount, 0));
-    document.querySelector('#dash-today-personal .dashboard-item-title').textContent = 'My Revenue (Today)';
+    document.querySelector('#dash-today-personal .dashboard-item-title').textContent = 'Моя выручка (сегодня)';
   }
 
   if(userIsPrivileged) {
@@ -284,7 +284,7 @@ function renderMainContributionChart() {
 
   const leaderboardData = state.data.leaderboard;
   if (!leaderboardData || leaderboardData.length === 0) {
-    container.innerHTML = '<div class="empty-state"><p>No data for chart.</p></div>';
+    container.innerHTML = '<div class="empty-state"><p>Нет данных для графика.</p></div>';
     return;
   }
 
@@ -351,7 +351,7 @@ function formatPlate(plate) {
 export function renderOrdersList(container, orders, context = 'default') {
   if (!container) return;
   if (!orders?.length) {
-    container.innerHTML = '<div class="empty-state"><p>No orders found</p></div>';
+    container.innerHTML = '<div class="empty-state"><p>Заказ-нарядов нет</p></div>';
     return;
   }
 
@@ -362,7 +362,7 @@ export function renderOrdersList(container, orders, context = 'default') {
     const item = document.createElement('div');
     const isDone = order.status === 'done';
     item.className = `order-item ${isDone ? 'order-item--done' : ''}`;
-    const smsBody = encodeURIComponent(`Hello, ${order.clientName || 'client'}. Your car ${order.carModel || ''} is ready for pickup. Best regards, VipAuto.`);
+    const smsBody = encodeURIComponent(`Здравствуйте, ${order.clientName || 'клиент'}. Ваш автомобиль ${order.carModel || ''} готов к выдаче. С уважением, VipАвто.`);
     item.innerHTML = `
       <div>
         <div class="order-title">
@@ -382,10 +382,10 @@ export function renderOrdersList(container, orders, context = 'default') {
         <div class="order-amount-value">${formatCurrency(order.amount)}</div>
         <div class="order-actions">
           ${context === 'default' ? `
-            <button class="btn btn-sm ${isDone ? 'btn-secondary' : 'btn-success'}" data-action="toggle-order-status" data-id="${order.id}" data-status="${order.status}" title="${isDone ? 'Return to work' : 'Complete'}">
+            <button class="btn btn-sm ${isDone ? 'btn-secondary' : 'btn-success'}" data-action="toggle-order-status" data-id="${order.id}" data-status="${order.status}" title="${isDone ? 'Вернуть в работу' : 'Завершить'}">
               <i class="fas ${isDone ? 'fa-undo' : 'fa-check'}"></i>
             </button>
-            ${order.clientPhone ? `<a href="sms:${order.clientPhone}?body=${smsBody}" class="btn btn-secondary btn-sm" title="Send SMS"><i class="fas fa-comment-sms"></i></a>` : ''}
+            ${order.clientPhone ? `<a href="sms:${order.clientPhone}?body=${smsBody}" class="btn btn-secondary btn-sm" title="Отправить SMS"><i class="fas fa-comment-sms"></i></a>` : ''}
           ` : ''}
           ${canEditOrder(order, state.user) ? `<button class="btn btn-secondary btn-sm" data-action="edit-order" data-id="${order.id}"><i class="fas fa-pen"></i></button>` : ''}
           ${isPrivileged() ? `<button class="btn btn-danger btn-sm" data-action="delete-order" data-id="${order.id}"><i class="fas fa-trash"></i></button>` : ''}
@@ -406,7 +406,7 @@ export function renderSearchHistory(history) {
   }
 
   container.innerHTML = `
-    <div class="search-history-header">Recent Searches</div>
+    <div class="search-history-header">Недавние поиски</div>
     ${history.map(item => `
       <div class="search-history-item" data-query="${item.query}">
         <i class="fas fa-history"></i>

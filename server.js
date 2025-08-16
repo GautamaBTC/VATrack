@@ -22,45 +22,69 @@ app.use(express.static(__dirname));
 const isPrivileged = (user) => user && (user.role === 'DIRECTOR' || user.role === 'SENIOR_MASTER');
 
 const prepareDataForUser = async (user) => {
-    const allWeekOrdersResult = await db.getOrders();
-    const allWeekOrders = allWeekOrdersResult.rows;
+    // Fetch all necessary data in parallel for efficiency
+    const [
+        weekOrdersResult,
+        allOrdersResult,
+        users,
+        historyResult,
+        clientsResult
+    ] = await Promise.all([
+        db.getOrders(),
+        db.getAllOrders(),
+        db.getUsers(),
+        db.getHistory(),
+        db.getClients()
+    ]);
 
-    const users = await db.getUsers(); // This is an object now
-    const historyResult = await db.getHistory();
+    const weekOrders = weekOrdersResult.rows;
+    const allOrders = allOrdersResult.rows; // Includes active and archived orders
     const history = historyResult.rows;
-    const clientsResult = await db.getClients();
     const clients = clientsResult.rows;
 
+    // Filter out the director from the list of masters
     const masters = Object.values(users)
-        .filter(u => u.name !== 'Владимир Орлов' && u.role.includes('MASTER'))
+        .filter(u => u.role.includes('MASTER'))
         .map(u => u.name);
 
+    // Determine which orders are relevant for the current user
     const userIsPrivileged = isPrivileged(user);
-    const relevantOrders = userIsPrivileged ? allWeekOrders : allWeekOrders.filter(o => o.masterName === user.name);
+    const relevantWeekOrders = userIsPrivileged ? weekOrders : weekOrders.filter(o => o.masterName === user.name);
 
+    // Calculate statistics for the current week
     const weekStats = {
-        revenue: relevantOrders.reduce((s, o) => s + parseFloat(o.amount), 0),
-        ordersCount: relevantOrders.length,
-        avgCheck: relevantOrders.length > 0 ? Math.round(relevantOrders.reduce((s, o) => s + parseFloat(o.amount), 0) / relevantOrders.length) : 0
+        revenue: relevantWeekOrders.reduce((s, o) => s + parseFloat(o.amount || 0), 0),
+        ordersCount: relevantWeekOrders.length,
+        avgCheck: relevantWeekOrders.length > 0 ? Math.round(relevantWeekOrders.reduce((s, o) => s + parseFloat(o.amount || 0), 0) / relevantWeekOrders.length) : 0
     };
 
-    const leaderboard = Object.values(allWeekOrders.reduce((acc, o) => {
+    // Create a leaderboard based on the current week's orders
+    const leaderboard = Object.values(weekOrders.reduce((acc, o) => {
         if (!acc[o.masterName]) acc[o.masterName] = { name: o.masterName, revenue: 0, ordersCount: 0 };
-        acc[o.masterName].revenue += parseFloat(o.amount);
+        acc[o.masterName].revenue += parseFloat(o.amount || 0);
         acc[o.masterName].ordersCount++;
         return acc;
     }, {})).sort((a, b) => b.revenue - a.revenue);
 
-    const todayOrders = relevantOrders.filter(o => new Date(o.created_at).toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10));
+    // Filter for today's orders from the relevant weekly orders
+    const todayOrders = relevantWeekOrders.filter(o => new Date(o.createdAt).toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10));
+
+    // Attach the full order list to each history item for client-side rendering
+    const historyWithOrders = history.map(h => {
+        return {
+            ...h,
+            orders: allOrders.filter(o => o.weekId === h.weekId)
+        };
+    });
 
     return {
-        weekOrders: relevantOrders,
-        weekStats: weekStats,
+        weekOrders: relevantWeekOrders,
+        weekStats,
         todayOrders,
         leaderboard,
         masters,
         user,
-        history: history || [],
+        history: historyWithOrders || [],
         clients: clients || []
     };
 };
