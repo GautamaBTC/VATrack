@@ -33,83 +33,87 @@
 .license-plate {
     display: inline-flex;
     align-items: stretch;
-    border: 2px solid #333;
-    border-radius: 4px;
+    border: 2px solid #000;
+    border-radius: 6px;
     background-color: #fff;
     color: #000;
-    font-family: 'PT Sans', 'Helvetica', 'Arial', sans-serif;
+    font-family: 'Road UA', 'Helvetica', 'Arial', sans-serif;
     font-weight: 700;
     text-transform: uppercase;
     overflow: hidden;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
-    font-size: 0.85em; /* Further reduced base size for overall compactness */
-    height: 28px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    height: 32px;
+    line-height: 32px;
 }
+
 .license-plate-fallback {
-    padding: 2px 8px;
-    font-size: 1.1em;
+    padding: 0 10px;
+    font-size: 1rem;
 }
+
 .plate-main {
-    padding: 2px 8px;
+    padding: 0 8px;
     display: flex;
     align-items: center;
-    gap: 0.1em;
+    letter-spacing: 2px;
 }
-.plate-letter, .plate-letters {
-    font-size: 1em; /* Base size for letters */
-    transform: scaleY(0.95);
-    display: inline-block;
-    position: relative;
-    top: 0.12em; /* Nudge letters down to align with baseline of larger digits */
+
+.plate-letter {
+    font-size: 1.5rem;
 }
+
 .plate-digits {
-    font-size: 1.725em; /* Increased by 25% from 1.38em */
-    letter-spacing: 0.5px;
+    font-size: 1.75rem;
+    position: relative;
+    top: -0.05em;
 }
+
 .plate-region {
-    border-left: 2px solid #333;
-    padding: 2px 6px;
+    border-left: 2px solid #000;
+    padding: 0 8px;
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    min-width: 36px;
-}
-.region-code {
-    font-size: 0.8em; /* Significantly smaller region code */
     line-height: 1;
-    font-weight: 600;
 }
+
+.region-code {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
 .region-flag {
     display: flex;
     align-items: center;
-    gap: 2px;
-    margin-top: 2px;
+    gap: 0;
 }
+
 .region-flag .flag-rus {
-    font-size: 0.6em;
-    font-weight: 600;
-    color: #555;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #000;
+    margin-left: 4px;
 }
+
 .flag-white, .flag-blue, .flag-red {
-    width: 3px;
-    height: 9px;
+    width: 5px;
+    height: 10px;
+    border: none;
 }
-.flag-white { background-color: #fff; border: 1px solid #ccc; }
+.flag-white { background-color: #fff; }
 .flag-blue { background-color: #0039A6; }
 .flag-red { background-color: #D52B1E; }
 
 html[data-theme="dark"] .license-plate {
     border-color: #ccc;
-    background-color: #ddd;
+    background-color: #f0f0f0;
     color: #000;
 }
 html[data-theme="dark"] .plate-region {
-    border-left-color: #333;
-}
-html[data-theme="dark"] .region-flag .flag-rus {
-    color: #000;
+    border-left-color: #000;
 }
 .order-meta {
   display: flex;
