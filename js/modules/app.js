@@ -1,7 +1,7 @@
 /*────────────────────────────────────────────
   js/modules/app.js
-  Основной файл приложения (точка входа).
-  Отвечает за инициализацию приложения.
+  Main application file (entry point).
+  Responsible for initializing the application.
 ─────────────────────────────────────────────*/
 
 import { state } from './state.js';
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSocketConnection();
     initEventListeners();
 
-    // Определяем начальную вкладку, но пока не активируем ее
+    // Determine the initial tab, but don't activate it yet
     const savedTabId = localStorage.getItem('vipauto_active_tab') || 'home';
     const tabToActivate = document.querySelector(`.nav-tab[data-tab="${savedTabId}"]`);
 
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.activeTab = 'home';
     }
 
-    // Глобальный обработчик кликов для data-action и data-tab
+    // Global click handler for data-action and data-tab
     document.body.addEventListener('click', (e) => {
       const actionTarget = e.target.closest('[data-action]');
       const tabTarget = e.target.closest('[data-tab]');
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
   } catch (error) {
-    console.error("КРИТИЧЕСКАЯ ОШИБКА:", error);
+    console.error("CRITICAL ERROR:", error);
     logout();
   }
 });

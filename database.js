@@ -1,225 +1,155 @@
 /*────────────────────────────────────────────
   database.js
-  Модуль для управления базой данных (db.json)
+  Database management module (PostgreSQL)
 ─────────────────────────────────────────────*/
 
+const { Pool } = require('pg');
 const fs = require('fs').promises;
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'db.json');
+// Use DATABASE_URL from environment variables, with a fallback for local development
+const connectionString = process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/vipauto';
 
-// Внутреннее состояние базы данных
-let db = { users: {}, orders: [], history: [], clients: [] };
+const pool = new Pool({
+  connectionString,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
 
 /**
- * Сохраняет текущее состояние БД в файл db.json
+ * Executes a SQL query against the database
+ * @param {string} text - The SQL query text
+ * @param {Array} params - The query parameters
+ * @returns {Promise<QueryResult>}
  */
-const saveDB = async () => {
-  try {
-    await fs.writeFile(DB_PATH, JSON.stringify(db, null, 2));
-  } catch (err) {
-    console.error('!!! ОШИБКА СОХРАНЕНИЯ БД:', err);
-  }
+const query = (text, params) => pool.query(text, params);
+
+/**
+ * Checks if a table exists in the database
+ * @param {string} tableName - The name of the table
+ * @returns {Promise<boolean>}
+ */
+const tableExists = async (tableName) => {
+  const res = await query(`
+    SELECT EXISTS (
+      SELECT FROM information_schema.tables
+      WHERE table_schema = 'public'
+      AND table_name = $1
+    );
+  `, [tableName]);
+  return res.rows[0].exists;
 };
 
 /**
- * Загружает БД из файла db.json. Если файл не найден или пуст,
- * создает новую БД с тестовыми данными.
+ * Initializes the database schema from schema.sql if tables do not exist
  */
-const loadDB = async () => {
-  try {
-    const fileContent = await fs.readFile(DB_PATH, 'utf-8');
-    if (fileContent.length < 20) throw new Error("Empty DB file");
-    const parsedDb = JSON.parse(fileContent);
-
-    // Убедимся, что все части БД существуют
-    db = { users: {}, orders: [], history: [], clients: [], ...parsedDb };
-
-    if (!db.orders || db.orders.length === 0) {
-      console.log(`[DB] База пуста. Заполняем тестовыми данными.`);
-      seedDatabaseWithTestData();
-      await saveDB();
+const initSchema = async () => {
+    const usersTableExists = await tableExists('users');
+    if (!usersTableExists) {
+        console.log('[DB] Tables not found. Initializing schema from schema.sql...');
+        try {
+            const schemaSql = await fs.readFile(path.join(__dirname, 'schema.sql'), 'utf-8');
+            await query(schemaSql);
+            console.log('[DB] Schema initialized successfully.');
+        } catch (err) {
+            console.error('!!! SCHEMA INITIALIZATION ERROR:', err);
+            // If an error occurs, it might be best to stop the application
+            process.exit(1);
+        }
     } else {
-      console.log(`[DB] База успешно загружена. Заказов: ${db.orders.length}, Клиентов: ${db.clients.length}`);
+        console.log('[DB] Tables already exist. Skipping schema initialization.');
     }
-  } catch (error) {
-    console.log(`[DB] Файл db.json не найден или поврежден. Создаем новую базу.`);
-    db = { users: {}, orders: [], history: [], clients: [] };
-    seedDatabaseWithTestData();
-    await saveDB();
-  }
 };
 
-/**
- * Заполняет базу данных начальными тестовыми данными.
- */
-const seedDatabaseWithTestData = () => {
-    console.log('[SEED] Запуск генерации тестовых данных...');
-    db.users = {
-        'director': { password: 'Dir7wK9c', role: 'DIRECTOR', name: 'Владимир Орлов' },
-        'vladimir.ch': { password: 'Vch4R5tG', role: 'SENIOR_MASTER', name: 'Владимир Ч.' },
-        'vladimir.a': { password: 'Vla9L2mP', role: 'MASTER', name: 'Владимир А.' },
-        'andrey': { password: 'And3Z8xY', role: 'MASTER', name: 'Андрей' },
-        'danila': { password: 'Dan6J1vE', role: 'MASTER', name: 'Данила' },
-        'maxim': { password: 'Max2B7nS', role: 'MASTER', name: 'Максим' },
-        'artyom': { password: 'Art5H4qF', role: 'MASTER', name: 'Артём' }
-    };
-
-    const masterNames = Object.values(db.users).filter(u => u.role.includes('MASTER')).map(u => u.name);
-    const carBrands = ['Lada Vesta', 'Toyota Camry', 'Ford Focus', 'BMW X5', 'Mercedes C-Class', 'Audi A6', 'Kia Rio', 'Hyundai Solaris'];
-    const services = ['Замена масла ДВС', 'Комплексный шиномонтаж', 'Диагностика ходовой', 'Ремонт тормозной системы', 'Замена ГРМ'];
-
-    const generateLicensePlate = () => {
-        const letters = 'АВЕКМНОРСТУХ';
-        const region = ['77', '99', '177', '199', '777', '161', '61', '93', '123'][Math.floor(Math.random() * 9)];
-        const l1 = letters[Math.floor(Math.random() * letters.length)];
-        const d1 = String(Math.floor(Math.random() * 10));
-        const d2 = String(Math.floor(Math.random() * 10));
-        const d3 = String(Math.floor(Math.random() * 10));
-        const l2 = letters[Math.floor(Math.random() * letters.length)];
-        const l3 = letters[Math.floor(Math.random() * letters.length)];
-        return `${l1} ${d1}${d2}${d3} ${l2}${l3} ${region}`;
-    };
-
-    const clientsData = [
-        { name: 'Иван Петров', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Сергей Смирнов', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Анна Кузнецова', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Ольга Васильева', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Дмитрий Попов', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-    ];
-
-    db.clients = clientsData.map((c, i) => ({
-        ...c,
-        id: `client-${Date.now()}-${i}`,
-        createdAt: new Date().toISOString(),
-        carModel: carBrands[Math.floor(Math.random() * carBrands.length)],
-        licensePlate: generateLicensePlate()
-    }));
-
-    let testOrders = [];
-    for (let i = 0; i < 50; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - Math.floor(Math.random() * 7));
-        date.setHours(Math.floor(Math.random() * 10) + 9, Math.floor(Math.random() * 60));
-
-        const randomClient = db.clients[Math.floor(Math.random() * db.clients.length)];
-
-        const generateLicensePlate = () => {
-            const letters = 'АВЕКМНОРСТУХ';
-            const region = ['77', '99', '177', '199', '777', '161', '61', '93', '123'][Math.floor(Math.random() * 9)];
-            const l1 = letters[Math.floor(Math.random() * letters.length)];
-            const d1 = String(Math.floor(Math.random() * 10));
-            const d2 = String(Math.floor(Math.random() * 10));
-            const d3 = String(Math.floor(Math.random() * 10));
-            const l2 = letters[Math.floor(Math.random() * letters.length)];
-            const l3 = letters[Math.floor(Math.random() * letters.length)];
-            return `${l1} ${d1}${d2}${d3} ${l2}${l3} ${region}`;
-        };
-
-        testOrders.push({
-            id: `ord-${Date.now()}-${i}`,
-            masterName: masterNames[Math.floor(Math.random() * masterNames.length)],
-            carModel: carBrands[Math.floor(Math.random() * carBrands.length)],
-            licensePlate: generateLicensePlate(),
-            description: services[Math.floor(Math.random() * services.length)],
-            amount: Math.floor(Math.random() * 2500 + 500),
-            paymentType: ['Картой', 'Наличные', 'Перевод'][Math.floor(Math.random() * 3)],
-            createdAt: date.toISOString(),
-            clientName: randomClient.name,
-            clientPhone: randomClient.phone,
-            clientId: randomClient.id,
-            status: 'new'
-        });
-    }
-    db.orders = testOrders;
-    console.log(`[SEED] Создано ${testOrders.length} тестовых заказ-нарядов и ${db.clients.length} клиентов.`);
-};
-
-// Экспортируем функции для работы с БД
 module.exports = {
-  // Инициализация
-  loadDB,
+  // Initialization
+  loadDB: initSchema,
 
-  // Геттеры для получения данных
-  getUsers: () => db.users,
-  getOrders: () => db.orders,
-  getHistory: () => db.history,
-  getClients: () => db.clients,
-  findClientByPhone: (phone) => db.clients.find(c => c.phone === phone),
-  searchClients: (query) => {
-    if (!query) return [];
-    const lowerCaseQuery = query.toLowerCase();
-    return db.clients.filter(c =>
-        c.name.toLowerCase().includes(lowerCaseQuery) ||
-        c.phone.includes(query)
-    ).slice(0, 10);
+  // Data Getters
+  getUsers: async () => {
+    const { rows } = await query('SELECT * FROM users');
+    // Convert array to object for compatibility with old code
+    return rows.reduce((acc, user) => {
+        acc[user.login] = user;
+        return acc;
+    }, {});
+  },
+  getOrders: () => query("SELECT * FROM orders WHERE week_id IS NULL ORDER BY created_at DESC"),
+  getHistory: () => query("SELECT * FROM weekly_reports ORDER BY created_at DESC"),
+  getClients: () => query("SELECT * FROM clients ORDER BY created_at DESC"),
+  findClientByPhone: async (phone) => {
+    const { rows } = await query('SELECT * FROM clients WHERE phone = $1', [phone]);
+    return rows[0];
+  },
+  searchClients: async (searchQuery) => {
+    const { rows } = await query(
+        "SELECT * FROM clients WHERE name ILIKE $1 OR phone ILIKE $1 LIMIT 10",
+        [`%${searchQuery}%`]
+    );
+    return rows;
   },
 
-  // Функции для изменения данных
-  addOrder: async (order) => {
-    const orderWithStatus = { ...order, status: 'new' };
-    db.orders.unshift(orderWithStatus);
-    await saveDB();
+  // Data Modifiers
+  addOrder: (order) => {
+    const { id, masterName, carModel, licensePlate, description, amount, paymentType, clientId } = order;
+    return query(
+      'INSERT INTO orders (id, master_name, car_model, license_plate, description, amount, payment_type, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      [id, masterName, carModel, licensePlate, description, amount, paymentType, clientId]
+    );
   },
-  updateOrder: async (updatedOrder) => {
-    const orderIndex = db.orders.findIndex(o => o.id === updatedOrder.id);
-    if (orderIndex !== -1) {
-      db.orders[orderIndex] = { ...db.orders[orderIndex], ...updatedOrder };
-      await saveDB();
-      return true;
-    }
-    return false;
+  updateOrder: (order) => {
+    const { id, masterName, carModel, licensePlate, description, amount, paymentType } = order;
+    return query(
+      'UPDATE orders SET master_name = $2, car_model = $3, license_plate = $4, description = $5, amount = $6, payment_type = $7 WHERE id = $1',
+      [id, masterName, carModel, licensePlate, description, amount, paymentType]
+    );
   },
-  updateOrderStatus: async (id, status) => {
-    const orderIndex = db.orders.findIndex(o => o.id === id);
-    if (orderIndex !== -1) {
-      db.orders[orderIndex].status = status;
-      await saveDB();
-      return true;
-    }
-    return false;
+  updateOrderStatus: (id, status) => query('UPDATE orders SET status = $2 WHERE id = $1', [id, status]),
+  deleteOrder: (id) => query('DELETE FROM orders WHERE id = $1', [id]),
+
+  addClient: (client) => {
+    const { id, name, phone, carModel, licensePlate } = client;
+    return query(
+      'INSERT INTO clients (id, name, phone, car_model, license_plate) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (phone) DO NOTHING',
+      [id, name, phone, carModel, licensePlate]
+    );
   },
-  deleteOrder: async (id) => {
-    const initialLength = db.orders.length;
-    db.orders = db.orders.filter(o => o.id !== id);
-    if (db.orders.length < initialLength) {
-      await saveDB();
-      return true;
-    }
-    return false;
+  updateClient: (client) => {
+    const { id, name, phone, carModel, licensePlate } = client;
+    return query(
+      'UPDATE clients SET name = $2, phone = $3, car_model = $4, license_plate = $5 WHERE id = $1',
+      [id, name, phone, carModel, licensePlate]
+    );
   },
-  addClient: async (client) => {
-    db.clients.push(client);
-    await saveDB();
-  },
-  updateClient: async (updatedClient) => {
-    const clientIndex = db.clients.findIndex(c => c.id === updatedClient.id);
-    if (clientIndex !== -1) {
-      db.clients[clientIndex] = { ...db.clients[clientIndex], ...updatedClient };
-      await saveDB();
-      return true;
-    }
-    return false;
-  },
+
   closeWeek: async (payload) => {
     const { salaryReport } = payload;
-    db.history.unshift({
-      weekId: `week-${Date.now()}`,
-      orders: [...db.orders],
-      salaryReport: salaryReport || []
-    });
-    db.orders = [];
-    await saveDB();
+    const weekId = `week-${Date.now()}`;
+    await query('BEGIN');
+    try {
+      await query('INSERT INTO weekly_reports (week_id, salary_report) VALUES ($1, $2)', [weekId, JSON.stringify(salaryReport)]);
+      await query("UPDATE orders SET week_id = $1 WHERE week_id IS NULL", [weekId]);
+      await query('COMMIT');
+    } catch (e) {
+      await query('ROLLBACK');
+      throw e;
+    }
   },
-  clearData: async () => {
-    db.orders = [];
-    db.history = [];
-    // Не очищаем клиентов и пользователей при этой операции
-    await saveDB();
+
+  clearData: () => query('DELETE FROM orders') && query('DELETE FROM weekly_reports'), // Simplified, consider constraints
+  clearHistory: () => query('DELETE FROM weekly_reports'),
+
+  // Search History Functions
+  getSearchHistory: async (userLogin) => {
+    const { rows } = await query(
+      'SELECT * FROM search_history WHERE user_login = $1 ORDER BY timestamp DESC LIMIT 10',
+      [userLogin]
+    );
+    return rows;
   },
-  clearHistory: async () => {
-    db.history = [];
-    await saveDB();
+  addSearchQuery: (userLogin, searchQuery) => {
+    return query(
+      'INSERT INTO search_history (id, user_login, query) VALUES ($1, $2, $3)',
+      [`search-${Date.now()}`, userLogin, searchQuery]
+    );
   }
 };
