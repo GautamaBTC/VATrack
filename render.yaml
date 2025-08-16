@@ -24,4 +24,4 @@ services:
       - key: JWT_SECRET
         generateValue: true # Instructs Render to generate a secure, random value for the secret
       - key: NODE_VERSION
-        value: "18.17.1" # Specifies the Node.js version
+        value: "20.11.0" # Specifies the Node.js version

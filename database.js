@@ -79,6 +79,12 @@ module.exports = {
            client_id AS "clientId", status, week_id AS "weekId"
     FROM orders WHERE week_id IS NULL ORDER BY created_at DESC
   `),
+  getAllOrders: () => query(`
+    SELECT id, master_name AS "masterName", car_model AS "carModel", license_plate AS "licensePlate",
+           description, amount, payment_type AS "paymentType", created_at AS "createdAt",
+           client_id AS "clientId", status, week_id AS "weekId"
+    FROM orders ORDER BY created_at DESC
+  `),
   getHistory: () => query(`
     SELECT week_id AS "weekId", created_at AS "createdAt", salary_report AS "salaryReport"
     FROM weekly_reports ORDER BY created_at DESC

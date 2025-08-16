@@ -1,6 +1,6 @@
 /*────────────────────────────────────────────
   js/modules/handlers.js
-  Event and user action handlers.
+  Обработчики событий и действий пользователя.
 ─────────────────────────────────────────────*/
 
 import { state, isPrivileged } from './state.js';
@@ -53,13 +53,13 @@ export function handleAction(target) {
         const financeTab = document.querySelector('[data-tab="finance"]');
         if (financeTab) financeTab.click();
     },
-    'clear-history': () => openConfirmationModal({ title: 'Clear history?', text: 'All archived records will be deleted.', onConfirm: () => state.socket.emit('clearHistory') }),
+    'clear-history': () => openConfirmationModal({ title: 'Очистить историю?', text: 'Все архивные записи будут удалены.', onConfirm: () => state.socket.emit('clearHistory') }),
     'clear-data': () => openClearDataCaptchaModal(),
     'edit-order': () => {
       const order = [...(state.data.weekOrders || []), ...(state.data.history.flatMap(h => h.orders) || [])].find(o => o.id === id);
       if (order) openOrderModal(order);
     },
-    'delete-order': () => openConfirmationModal({ title: 'Confirm deletion', onConfirm: () => state.socket.emit('deleteOrder', id) }),
+    'delete-order': () => openConfirmationModal({ title: 'Подтвердить удаление', onConfirm: () => state.socket.emit('deleteOrder', id) }),
     'award-bonus': () => {
       if (masterName) openBonusModal(masterName);
     },
@@ -213,7 +213,7 @@ function handleClientSearch(query, resultsContainerId) {
 function finalizeWeek() {
     const salaryItems = document.querySelectorAll('.salary-item');
     if (!salaryItems.length) {
-        return showNotification('No data to calculate.', 'error');
+        return showNotification('Нет данных для расчета.', 'error');
     }
 
     const salaryReport = Array.from(salaryItems).map(item => {
@@ -227,13 +227,13 @@ function finalizeWeek() {
     const totalPayout = salaryReport.reduce((sum, item) => sum + item.finalSalary, 0);
 
     const confirmationText = `
-        <p>You are about to close the week. This action will move all current orders to the archive.</p>
-        <p>Total payout: <strong>${formatCurrency(totalPayout)}</strong></p>
-        <p>Are you sure?</p>
+        <p>Вы собираетесь закрыть неделю. Это действие перенесет все текущие заказ-наряды в архив.</p>
+        <p>Итого к выплате: <strong>${formatCurrency(totalPayout)}</strong></p>
+        <p>Вы уверены?</p>
     `;
 
     openConfirmationModal({
-        title: 'Confirm week closing?',
+        title: 'Подтвердить закрытие недели?',
         text: confirmationText,
         onConfirm: () => state.socket.emit('closeWeek', { salaryReport })
     });
@@ -242,7 +242,7 @@ function finalizeWeek() {
 function exportData() {
     const datePickerInput = document.getElementById('archive-date-picker');
     if (!datePickerInput || !datePickerInput._flatpickr || datePickerInput._flatpickr.selectedDates.length !== 2) {
-        return showNotification('Please select a date range for export.', 'error');
+        return showNotification('Пожалуйста, выберите диапазон дат для экспорта.', 'error');
     }
 
     const [start, end] = datePickerInput._flatpickr.selectedDates;
@@ -256,18 +256,18 @@ function exportData() {
     });
 
     if (!ordersToExport.length) {
-        return showNotification('No data to export for the selected period.', 'error');
+        return showNotification('Нет данных для экспорта за указанный период.', 'error');
     }
 
     const data = ordersToExport.map(o => ({
-        'Date': formatDate(o.createdAt),
-        'Master': o.masterName,
-        'Car': o.carModel,
-        'Description': o.description,
-        'Client Name': o.clientName || '',
-        'Client Phone': o.clientPhone || '',
-        'Amount': o.amount,
-        'Payment Type': o.paymentType
+        'Дата': formatDate(o.createdAt),
+        'Мастер': o.masterName,
+        'Авто': o.carModel,
+        'Описание': o.description,
+        'Имя клиента': o.clientName || '',
+        'Телефон клиента': o.clientPhone || '',
+        'Сумма': o.amount,
+        'Оплата': o.paymentType
     }));
 
     const startStr = start.toISOString().slice(0, 10);
