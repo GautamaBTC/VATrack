@@ -71,10 +71,10 @@ function renderClientsPage() {
             ${formatPlate(client.licensePlate || '')}
           </div>
           <div class="client-actions">
-            <button class="btn btn-secondary btn-sm" data-action="edit-client" data-id="${client.id}" title="Редактировать">
+            <button class="btn btn-secondary btn-sm" data-action="edit-client" data-id="${client.id}" title="Edit">
               <i class="fas fa-pen"></i>
             </button>
-            <button class="btn btn-secondary btn-sm" data-action="view-client-history" data-id="${client.id}" title="История клиента">
+            <button class="btn btn-secondary btn-sm" data-action="view-client-history" data-id="${client.id}" title="Client History">
               <i class="fas fa-history"></i>
             </button>
           </div>
@@ -357,28 +357,6 @@ export function renderOrdersList(container, orders, context = 'default') {
 
   container.innerHTML = '';
   // Safeguard sort: ensure newest orders are always at the top.
-export function renderSearchHistory(history) {
-  const container = document.getElementById('client-search-history');
-  if (!container) return;
-
-  if (!history || history.length === 0) {
-    container.innerHTML = '';
-    container.classList.remove('active');
-    return;
-  }
-
-  container.innerHTML = `
-    <div class="search-history-header">Recent Searches</div>
-    ${history.map(item => `
-      <div class="search-history-item" data-query="${item.query}">
-        <i class="fas fa-history"></i>
-        <span>${item.query}</span>
-      </div>
-    `).join('')}
-  `;
-  container.classList.add('active');
-}
-
   [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .forEach(order => {
     const item = document.createElement('div');
@@ -415,4 +393,26 @@ export function renderSearchHistory(history) {
       </div>`;
     container.appendChild(item);
   });
+}
+
+export function renderSearchHistory(history) {
+  const container = document.getElementById('client-search-history');
+  if (!container) return;
+
+  if (!history || history.length === 0) {
+    container.innerHTML = '';
+    container.classList.remove('active');
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="search-history-header">Recent Searches</div>
+    ${history.map(item => `
+      <div class="search-history-item" data-query="${item.query}">
+        <i class="fas fa-history"></i>
+        <span>${item.query}</span>
+      </div>
+    `).join('')}
+  `;
+  container.classList.add('active');
 }
