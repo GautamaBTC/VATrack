@@ -76,13 +76,15 @@ module.exports = {
   getOrders: () => query(`
     SELECT id, master_name AS "masterName", car_model AS "carModel", license_plate AS "licensePlate",
            description, amount, payment_type AS "paymentType", created_at AS "createdAt",
-           client_id AS "clientId", status, week_id AS "weekId"
+           client_id AS "clientId", client_name AS "clientName", client_phone AS "clientPhone",
+           status, week_id AS "weekId"
     FROM orders WHERE week_id IS NULL ORDER BY created_at DESC
   `),
   getAllOrders: () => query(`
     SELECT id, master_name AS "masterName", car_model AS "carModel", license_plate AS "licensePlate",
            description, amount, payment_type AS "paymentType", created_at AS "createdAt",
-           client_id AS "clientId", status, week_id AS "weekId"
+           client_id AS "clientId", client_name AS "clientName", client_phone AS "clientPhone",
+           status, week_id AS "weekId"
     FROM orders ORDER BY created_at DESC
   `),
   getHistory: () => query(`
@@ -110,17 +112,17 @@ module.exports = {
 
   // Data Modifiers
   addOrder: (order) => {
-    const { id, masterName, carModel, licensePlate, description, amount, paymentType, clientId } = order;
+    const { id, masterName, carModel, licensePlate, description, amount, paymentType, clientId, clientName, clientPhone } = order;
     return query(
-      'INSERT INTO orders (id, master_name, car_model, license_plate, description, amount, payment_type, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-      [id, masterName, carModel, licensePlate, description, amount, paymentType, clientId]
+      'INSERT INTO orders (id, master_name, car_model, license_plate, description, amount, payment_type, client_id, client_name, client_phone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+      [id, masterName, carModel, licensePlate, description, amount, paymentType, clientId, clientName, clientPhone]
     );
   },
   updateOrder: (order) => {
-    const { id, masterName, carModel, licensePlate, description, amount, paymentType } = order;
+    const { id, masterName, carModel, licensePlate, description, amount, paymentType, clientName, clientPhone } = order;
     return query(
-      'UPDATE orders SET master_name = $2, car_model = $3, license_plate = $4, description = $5, amount = $6, payment_type = $7 WHERE id = $1',
-      [id, masterName, carModel, licensePlate, description, amount, paymentType]
+      'UPDATE orders SET master_name = $2, car_model = $3, license_plate = $4, description = $5, amount = $6, payment_type = $7, client_name = $8, client_phone = $9 WHERE id = $1',
+      [id, masterName, carModel, licensePlate, description, amount, paymentType, clientName, clientPhone]
     );
   },
   updateOrderStatus: (id, status) => query('UPDATE orders SET status = $2 WHERE id = $1', [id, status]),
