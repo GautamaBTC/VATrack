@@ -1,6 +1,6 @@
 /*────────────────────────────────────────────
   js/modules/handlers.js
-  Обработчики событий и действий пользователя.
+  Event and user action handlers.
 ─────────────────────────────────────────────*/
 
 import { state, isPrivileged } from './state.js';
@@ -53,13 +53,13 @@ export function handleAction(target) {
         const financeTab = document.querySelector('[data-tab="finance"]');
         if (financeTab) financeTab.click();
     },
-    'clear-history': () => openConfirmationModal({ title: 'Очистить историю?', text: 'Все архивные записи будут удалены.', onConfirm: () => state.socket.emit('clearHistory') }),
+    'clear-history': () => openConfirmationModal({ title: 'Clear history?', text: 'All archived records will be deleted.', onConfirm: () => state.socket.emit('clearHistory') }),
     'clear-data': () => openClearDataCaptchaModal(),
     'edit-order': () => {
       const order = [...(state.data.weekOrders || []), ...(state.data.history.flatMap(h => h.orders) || [])].find(o => o.id === id);
       if (order) openOrderModal(order);
     },
-    'delete-order': () => openConfirmationModal({ title: 'Подтвердить удаление', onConfirm: () => state.socket.emit('deleteOrder', id) }),
+    'delete-order': () => openConfirmationModal({ title: 'Confirm deletion', onConfirm: () => state.socket.emit('deleteOrder', id) }),
     'award-bonus': () => {
       if (masterName) openBonusModal(masterName);
     },
@@ -97,9 +97,33 @@ export function handleTabSwitch(target) {
 export function initEventListeners() {
   // Client Search Logic (now in the Clients tab)
   const clientSearchInput = document.getElementById('client-search-input');
-  if(clientSearchInput) {
+  if (clientSearchInput) {
     clientSearchInput.addEventListener('input', (e) => {
-      handleClientSearch(e.target.value, 'client-search-results');
+      const query = e.target.value;
+      handleClientSearch(query, 'client-search-results');
+      const historyContainer = document.getElementById('client-search-history');
+      if (query.length > 1) {
+        if (historyContainer) historyContainer.classList.remove('active');
+      } else {
+        if (historyContainer) historyContainer.classList.add('active');
+        state.socket.emit('getSearchHistory');
+      }
+    });
+
+    clientSearchInput.addEventListener('focus', () => {
+      if (clientSearchInput.value.length < 2) {
+        const historyContainer = document.getElementById('client-search-history');
+        if (historyContainer) historyContainer.classList.add('active');
+        state.socket.emit('getSearchHistory');
+      }
+    });
+
+    clientSearchInput.addEventListener('blur', () => {
+      // Delay hiding to allow click events on results/history
+      setTimeout(() => {
+        document.getElementById('client-search-results').classList.remove('active');
+        document.getElementById('client-search-history').classList.remove('active');
+      }, 200);
     });
   }
 
@@ -109,7 +133,7 @@ export function initEventListeners() {
     flatpickrInstance = flatpickr(datePicker, {
       mode: "range",
       dateFormat: "Y-m-d",
-      locale: "ru", // Requires Russian locale to be loaded
+      locale: "ru", // Requires locale to be loaded
       onChange: function(selectedDates, dateStr, instance) {
         // When a date range is selected, automatically trigger the filter.
         if (selectedDates.length === 2) {
@@ -151,13 +175,25 @@ export function initEventListeners() {
           finalizeWeek();
       }
       const clientItem = e.target.closest('.search-result-item:not(.disabled)');
-      if(clientItem && (clientItem.parentElement.id === 'home-search-results' || clientItem.parentElement.id === 'client-search-results')) {
+      if (clientItem && (clientItem.parentElement.id === 'home-search-results' || clientItem.parentElement.id === 'client-search-results')) {
           const client = { id: clientItem.dataset.id, name: clientItem.dataset.name, phone: clientItem.dataset.phone };
           openClientHistoryModal(client);
           clientItem.parentElement.classList.remove('active');
-          // Also clear the input field
           const input = document.getElementById(clientItem.parentElement.id.replace('-results', '-input'));
           if (input) input.value = '';
+          return; // Prevent other handlers from firing
+      }
+
+      const historyItem = e.target.closest('.search-history-item');
+      if (historyItem) {
+          const query = historyItem.dataset.query;
+          const searchInput = document.getElementById('client-search-input');
+          if (searchInput) {
+              searchInput.value = query;
+              handleClientSearch(query, 'client-search-results');
+              searchInput.focus();
+              document.getElementById('client-search-history').classList.remove('active');
+          }
       }
   });
 }
@@ -177,7 +213,7 @@ function handleClientSearch(query, resultsContainerId) {
 function finalizeWeek() {
     const salaryItems = document.querySelectorAll('.salary-item');
     if (!salaryItems.length) {
-        return showNotification('Нет данных для расчета.', 'error');
+        return showNotification('No data to calculate.', 'error');
     }
 
     const salaryReport = Array.from(salaryItems).map(item => {
@@ -191,13 +227,13 @@ function finalizeWeek() {
     const totalPayout = salaryReport.reduce((sum, item) => sum + item.finalSalary, 0);
 
     const confirmationText = `
-        <p>Вы собираетесь закрыть неделю. Это действие перенесет все текущие заказ-наряды в архив.</p>
-        <p>Итого к выплате: <strong>${formatCurrency(totalPayout)}</strong></p>
-        <p>Вы уверены?</p>
+        <p>You are about to close the week. This action will move all current orders to the archive.</p>
+        <p>Total payout: <strong>${formatCurrency(totalPayout)}</strong></p>
+        <p>Are you sure?</p>
     `;
 
     openConfirmationModal({
-        title: 'Подтвердить закрытие недели?',
+        title: 'Confirm week closing?',
         text: confirmationText,
         onConfirm: () => state.socket.emit('closeWeek', { salaryReport })
     });
@@ -206,7 +242,7 @@ function finalizeWeek() {
 function exportData() {
     const datePickerInput = document.getElementById('archive-date-picker');
     if (!datePickerInput || !datePickerInput._flatpickr || datePickerInput._flatpickr.selectedDates.length !== 2) {
-        return showNotification('Пожалуйста, выберите диапазон дат для экспорта.', 'error');
+        return showNotification('Please select a date range for export.', 'error');
     }
 
     const [start, end] = datePickerInput._flatpickr.selectedDates;
@@ -220,18 +256,18 @@ function exportData() {
     });
 
     if (!ordersToExport.length) {
-        return showNotification('Нет данных для экспорта за указанный период.', 'error');
+        return showNotification('No data to export for the selected period.', 'error');
     }
 
     const data = ordersToExport.map(o => ({
-        'Дата': formatDate(o.createdAt),
-        'Мастер': o.masterName,
-        'Авто': o.carModel,
-        'Описание': o.description,
-        'Имя клиента': o.clientName || '',
-        'Телефон клиента': o.clientPhone || '',
-        'Сумма': o.amount,
-        'Оплата': o.paymentType
+        'Date': formatDate(o.createdAt),
+        'Master': o.masterName,
+        'Car': o.carModel,
+        'Description': o.description,
+        'Client Name': o.clientName || '',
+        'Client Phone': o.clientPhone || '',
+        'Amount': o.amount,
+        'Payment Type': o.paymentType
     }));
 
     const startStr = start.toISOString().slice(0, 10);

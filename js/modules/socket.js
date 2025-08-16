@@ -1,17 +1,17 @@
 /*────────────────────────────────────────────
   js/modules/socket.js
-  Управление WebSocket соединением и событиями.
+  Manages WebSocket connection and events.
 ─────────────────────────────────────────────*/
 
 import { state } from './state.js';
 import { showNotification } from './utils.js';
-import { updateAndRender } from './ui.js';
+import { updateAndRender, renderSearchHistory } from './ui.js';
 
 export function initSocketConnection() {
   state.socket = io({ auth: { token: state.token } });
 
   state.socket.on('connect', () => {
-    console.log('Подключено к серверу.');
+    console.log('Connected to server.');
   });
 
   state.socket.on('connect_error', (err) => {
@@ -24,7 +24,7 @@ export function initSocketConnection() {
 
   state.socket.on('dataUpdate', (data) => {
     updateAndRender(data);
-    showNotification('Данные обновлены', 'success');
+    showNotification('Data updated', 'success');
   });
 
   state.socket.on('serverError', (msg) => {
@@ -36,7 +36,7 @@ export function initSocketConnection() {
     if (!activeResultsContainer) return;
 
     if (results.length === 0) {
-        activeResultsContainer.innerHTML = '<div class="search-result-item disabled">Совпадений не найдено</div>';
+        activeResultsContainer.innerHTML = '<div class="search-result-item disabled">No matches found</div>';
         return;
     }
 
@@ -45,5 +45,9 @@ export function initSocketConnection() {
             <strong>${client.name}</strong> (${client.phone})
          </div>`
     ).join('');
+  });
+
+  state.socket.on('searchHistoryResults', (history) => {
+    renderSearchHistory(history);
   });
 }
