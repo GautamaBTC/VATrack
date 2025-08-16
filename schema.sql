@@ -33,6 +33,8 @@ CREATE TABLE orders (
     payment_type TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     client_id TEXT REFERENCES clients(id) ON DELETE SET NULL,
+    client_name TEXT,
+    client_phone TEXT,
     status TEXT NOT NULL DEFAULT 'new',
     week_id TEXT REFERENCES weekly_reports(week_id) ON DELETE SET NULL
 );

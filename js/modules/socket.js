@@ -1,6 +1,6 @@
 /*────────────────────────────────────────────
   js/modules/socket.js
-  Manages WebSocket connection and events.
+  Управление WebSocket соединением и событиями.
 ─────────────────────────────────────────────*/
 
 import { state } from './state.js';
@@ -11,7 +11,7 @@ export function initSocketConnection() {
   state.socket = io({ auth: { token: state.token } });
 
   state.socket.on('connect', () => {
-    console.log('Connected to server.');
+    console.log('Подключено к серверу.');
   });
 
   state.socket.on('connect_error', (err) => {
@@ -24,7 +24,7 @@ export function initSocketConnection() {
 
   state.socket.on('dataUpdate', (data) => {
     updateAndRender(data);
-    showNotification('Data updated', 'success');
+    showNotification('Данные обновлены', 'success');
   });
 
   state.socket.on('serverError', (msg) => {
@@ -36,7 +36,7 @@ export function initSocketConnection() {
     if (!activeResultsContainer) return;
 
     if (results.length === 0) {
-        activeResultsContainer.innerHTML = '<div class="search-result-item disabled">No matches found</div>';
+        activeResultsContainer.innerHTML = '<div class="search-result-item disabled">Совпадений не найдено</div>';
         return;
     }
 
