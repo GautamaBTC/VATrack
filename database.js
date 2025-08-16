@@ -73,18 +73,32 @@ module.exports = {
         return acc;
     }, {});
   },
-  getOrders: () => query("SELECT * FROM orders WHERE week_id IS NULL ORDER BY created_at DESC"),
-  getHistory: () => query("SELECT * FROM weekly_reports ORDER BY created_at DESC"),
-  getClients: () => query("SELECT * FROM clients ORDER BY created_at DESC"),
+  getOrders: () => query(`
+    SELECT id, master_name AS "masterName", car_model AS "carModel", license_plate AS "licensePlate",
+           description, amount, payment_type AS "paymentType", created_at AS "createdAt",
+           client_id AS "clientId", status, week_id AS "weekId"
+    FROM orders WHERE week_id IS NULL ORDER BY created_at DESC
+  `),
+  getHistory: () => query(`
+    SELECT week_id AS "weekId", created_at AS "createdAt", salary_report AS "salaryReport"
+    FROM weekly_reports ORDER BY created_at DESC
+  `),
+  getClients: () => query(`
+    SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", created_at AS "createdAt"
+    FROM clients ORDER BY created_at DESC
+  `),
   findClientByPhone: async (phone) => {
-    const { rows } = await query('SELECT * FROM clients WHERE phone = $1', [phone]);
+    const { rows } = await query(`
+      SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", created_at AS "createdAt"
+      FROM clients WHERE phone = $1
+    `, [phone]);
     return rows[0];
   },
   searchClients: async (searchQuery) => {
-    const { rows } = await query(
-        "SELECT * FROM clients WHERE name ILIKE $1 OR phone ILIKE $1 LIMIT 10",
-        [`%${searchQuery}%`]
-    );
+    const { rows } = await query(`
+        SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", created_at AS "createdAt"
+        FROM clients WHERE name ILIKE $1 OR phone ILIKE $1 LIMIT 10
+    `, [`%${searchQuery}%`]);
     return rows;
   },
 
@@ -141,7 +155,7 @@ module.exports = {
   // Search History Functions
   getSearchHistory: async (userLogin) => {
     const { rows } = await query(
-      'SELECT * FROM search_history WHERE user_login = $1 ORDER BY timestamp DESC LIMIT 10',
+      'SELECT id, user_login AS "userLogin", query, timestamp FROM search_history WHERE user_login = $1 ORDER BY timestamp DESC LIMIT 10',
       [userLogin]
     );
     return rows;
