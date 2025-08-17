@@ -65,7 +65,7 @@ export function handleAction(target) {
         showNotification('Не удалось найти заказ-наряд для редактирования.', 'error');
       }
     },
-    'delete-order': () => openConfirmationModal({ title: 'Подтвердить удаление', onConfirm: () => state.socket.emit('deleteOrder', id) }),
+    'delete-order': () => openConfirmationModal({ title: 'Подтвердить удаление', onConfirm: () => state.socket.emit('deleteOrder', { id }) }),
     'delete-client': () => openDeleteClientCaptchaModal(id),
     'award-bonus': () => {
       if (masterName) openBonusModal(masterName);
