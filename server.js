@@ -134,96 +134,99 @@ io.on('connection', async (socket) => {
     socket.emit('searchHistoryResults', history);
   });
 
+  const handleDatabaseWrite = async (socket, operation, ...args) => {
+    try {
+      await operation(...args);
+      await broadcastUpdates();
+    } catch (error) {
+      console.error(`Database operation failed for user ${socket.user.login}:`, error);
+      socket.emit('serverError', 'Ошибка при сохранении данных в базу. Пожалуйста, попробуйте еще раз.');
+    }
+  };
+
   socket.on('addClient', async (clientData) => {
     if (isPrivileged(socket.user)) {
       const newClient = { ...clientData, id: `client-${Date.now()}` };
-      await db.addClient(newClient);
-      await broadcastUpdates();
+      await handleDatabaseWrite(socket, db.addClient, newClient);
     }
   });
 
   socket.on('updateClient', async (clientData) => {
     if (isPrivileged(socket.user)) {
-      await db.updateClient(clientData);
-      await broadcastUpdates();
+      await handleDatabaseWrite(socket, db.updateClient, clientData);
     }
   });
 
   socket.on('deleteClient', async (id) => {
-    if (isPrivileged(socket.user) && id) { // Add guard for ID
-      await db.deleteClient(id);
-      await broadcastUpdates();
+    if (isPrivileged(socket.user) && id) {
+      await handleDatabaseWrite(socket, db.deleteClient, id);
     }
   });
 
   socket.on('addOrder', async (orderData) => {
-    if (!isPrivileged(socket.user)) orderData.masterName = socket.user.name;
+    try {
+        if (!isPrivileged(socket.user)) orderData.masterName = socket.user.name;
 
-    const { clientName, clientPhone, carModel, licensePlate } = orderData;
-    let client = null;
-    if (clientPhone) { // Prevent DB query with undefined
-        client = await db.findClientByPhone(clientPhone);
+        const { clientName, clientPhone, carModel, licensePlate } = orderData;
+        let client = null;
+        if (clientPhone) {
+            client = await db.findClientByPhone(clientPhone);
+        }
+
+        if (!client && clientPhone) {
+            client = {
+                id: `client-${Date.now()}`,
+                name: clientName || 'Новый клиент',
+                phone: clientPhone,
+                carModel: carModel || '',
+                licensePlate: licensePlate || ''
+            };
+            await db.addClient(client);
+        }
+
+        const newOrder = { ...orderData, id: `ord-${Date.now()}`, clientId: client ? client.id : null };
+        await db.addOrder(newOrder);
+        await broadcastUpdates();
+    } catch (error) {
+        console.error(`Add order failed for user ${socket.user.login}:`, error);
+        socket.emit('serverError', 'Не удалось создать заказ-наряд.');
     }
-
-    if (!client && clientPhone) {
-        client = {
-            id: `client-${Date.now()}`,
-            name: clientName || 'Новый клиент',
-            phone: clientPhone,
-            carModel: carModel || '',
-            licensePlate: licensePlate || ''
-        };
-        await db.addClient(client);
-    }
-
-    const newOrder = { ...orderData, id: `ord-${Date.now()}`, clientId: client ? client.id : null };
-    await db.addOrder(newOrder);
-    await broadcastUpdates();
   });
 
   socket.on('updateOrder', async (orderData) => {
-    // Note: The complex time-based edit logic is simplified here.
-    // In a real app, you might want to fetch the order first to check its timestamp.
-    // For now, we trust the client-side checks and privilege level.
     if (isPrivileged(socket.user) || orderData.masterName === socket.user.name) {
-        await db.updateOrder(orderData);
-        await broadcastUpdates();
+      await handleDatabaseWrite(socket, db.updateOrder, orderData);
     } else {
-        socket.emit('serverError', 'You do not have permission to edit this order.');
+      socket.emit('serverError', 'У вас нет прав на редактирование этого заказа.');
     }
   });
 
   socket.on('deleteOrder', async (id) => {
-    if (isPrivileged(socket.user)) {
-      await db.deleteOrder(id);
-      await broadcastUpdates();
+    if (isPrivileged(socket.user) && id) {
+      await handleDatabaseWrite(socket, db.deleteOrder, id);
     }
   });
 
   socket.on('updateOrderStatus', async ({ id, status }) => {
-    await db.updateOrderStatus(id, status);
-    await broadcastUpdates();
+    await handleDatabaseWrite(socket, db.updateOrderStatus, id, status);
   });
 
   socket.on('closeWeek', async (payload) => {
     const ordersResult = await db.getOrders();
     if (isPrivileged(socket.user) && ordersResult.rows.length) {
-      await db.closeWeek(payload);
-      await broadcastUpdates();
+      await handleDatabaseWrite(socket, db.closeWeek, payload);
     }
   });
 
   socket.on('clearData', async () => {
     if (isPrivileged(socket.user)) {
-      await db.clearData();
-      await broadcastUpdates();
+      await handleDatabaseWrite(socket, db.clearData);
     }
   });
 
   socket.on('clearHistory', async () => {
     if (isPrivileged(socket.user)) {
-      await db.clearHistory();
-      await broadcastUpdates();
+      await handleDatabaseWrite(socket, db.clearHistory);
     }
   });
 
