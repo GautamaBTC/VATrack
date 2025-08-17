@@ -279,32 +279,6 @@ export function openClearDataCaptchaModal() {
     confirmBtn.addEventListener('click', () => { state.socket.emit('clearData'); closeModal(); });
 }
 
-export function openDeleteClientCaptchaModal(clientId) {
-    closeModal();
-    const captcha = 'УДАЛИТЬ';
-    const modal = document.createElement('div');
-    modal.className = 'modal-backdrop show';
-    modal.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header"><h3 class="modal-title">Подтверждение удаления клиента</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div>
-        <div class="modal-body">
-          <p>Это действие необратимо. Клиент будет удален. Все заказ-наряды этого клиента останутся, но будут помечены как анонимные.</p>
-          <p>Для подтверждения, пожалуйста, введите слово <strong>${captcha}</strong> в поле ниже.</p>
-          <div class="form-group"><input type="text" id="captcha-input" class="form-control" autocomplete="off"></div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button>
-            <button type="button" class="btn btn-danger" id="confirm-delete-client" disabled>Подтвердить и удалить</button>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', (e) => { if (e.target.closest('[data-action="close-modal"]') || e.target === modal) closeModal(); });
-    const captchaInput = modal.querySelector('#captcha-input');
-    const confirmBtn = modal.querySelector('#confirm-delete-client');
-    captchaInput.addEventListener('input', () => { confirmBtn.disabled = captchaInput.value !== captcha; });
-    confirmBtn.addEventListener('click', () => { state.socket.emit('deleteClient', { id: clientId }); closeModal(); });
-}
-
 export function openArchivedWeekModal(weekData) {
     closeModal();
     const modal = document.createElement('div');
