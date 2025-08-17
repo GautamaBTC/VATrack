@@ -18,6 +18,28 @@
       }
     }
   </script>
+  <script>
+    // Anti-FOUC (Flash of Unstyled Content) script
+    // This runs before the body renders to prevent flashes of incorrect themes or layouts.
+    (function() {
+      // Set theme
+      const savedTheme = localStorage.getItem('vipauto_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+
+      // Set privileged class
+      const userDataString = localStorage.getItem('vipauto_user') || sessionStorage.getItem('vipauto_user');
+      if (userDataString) {
+        try {
+          const user = JSON.parse(userDataString);
+          if (user && (user.role === 'DIRECTOR' || user.role === 'SENIOR_MASTER')) {
+            document.body.classList.add('is-privileged');
+          }
+        } catch (e) {
+          // Ignore parsing errors
+        }
+      }
+    })();
+  </script>
 </head>
 <body>
 

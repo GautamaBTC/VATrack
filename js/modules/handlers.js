@@ -56,8 +56,14 @@ export function handleAction(target) {
     'clear-history': () => openConfirmationModal({ title: 'Очистить историю?', text: 'Все архивные записи будут удалены.', onConfirm: () => state.socket.emit('clearHistory') }),
     'clear-data': () => openClearDataCaptchaModal(),
     'edit-order': () => {
-      const order = [...(state.data.weekOrders || []), ...(state.data.history.flatMap(h => h.orders) || [])].find(o => o.id === id);
-      if (order) openOrderModal(order);
+      const allOrders = [...(state.data.weekOrders || []), ...(state.data.history || []).flatMap(h => h.orders || [])];
+      const order = allOrders.find(o => o.id === id);
+      if (order) {
+        openOrderModal(order);
+      } else {
+        console.error('Order not found for editing:', id);
+        showNotification('Не удалось найти заказ-наряд для редактирования.', 'error');
+      }
     },
     'delete-order': () => openConfirmationModal({ title: 'Подтвердить удаление', onConfirm: () => state.socket.emit('deleteOrder', id) }),
     'delete-client': () => openDeleteClientCaptchaModal(id),
