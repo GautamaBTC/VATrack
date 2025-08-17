@@ -1,0 +1,98 @@
+/* ---------------------------------- */
+/* License Plate Component            */
+/* ---------------------------------- */
+
+.license-plate {
+    display: inline-flex;
+    align-items: stretch;
+    border: 2px solid #000;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #000;
+    font-family: 'Road UA', 'Helvetica', 'Arial', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    height: 32px;
+    line-height: 30px; /* Adjust for border */
+}
+
+.license-plate-fallback {
+    padding: 0 10px;
+    font-size: 1rem;
+}
+
+.plate-main {
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    letter-spacing: 1.5px;
+}
+
+.plate-letter, .plate-letters {
+    font-size: 1.6rem; /* Consistent size for all letters */
+}
+
+.plate-digits {
+    font-size: 1.8rem; /* Larger digits */
+    position: relative;
+    top: -0.05em;
+    margin: 0 1px;
+}
+
+.plate-region {
+    border-left: 2px solid #000;
+    padding: 0 6px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+    position: relative;
+    top: 2px; /* Nudge region down as requested */
+}
+
+.region-code {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.region-flag-container {
+    display: flex;
+    align-items: center;
+    gap: 4px; /* Space between flag and RUS */
+    height: 10px; /* Consistent height */
+    line-height: 10px;
+}
+
+.flag-rus {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #000;
+}
+
+.rus-flag {
+    width: 18px; /* Wider flag */
+    height: 10px; /* Taller stripes */
+}
+
+.rus-flag .flag-stripe {
+    height: 33.33%;
+    width: 100%;
+}
+
+.flag-white { background-color: #fff; }
+.flag-blue { background-color: #0039A6; }
+.flag-red { background-color: #D52B1E; }
+
+/* Dark Theme Adjustments */
+html[data-theme="dark"] .license-plate {
+    border-color: #ccc;
+    background-color: #f0f0f0;
+    color: #000;
+}
+html[data-theme="dark"] .plate-region {
+    border-left-color: #000;
+}

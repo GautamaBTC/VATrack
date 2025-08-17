@@ -77,6 +77,9 @@ function renderClientsPage() {
             <button class="btn btn-secondary btn-sm" data-action="view-client-history" data-id="${client.id}" title="История клиента">
               <i class="fas fa-history"></i>
             </button>
+            <button class="btn btn-danger btn-sm" data-action="delete-client" data-id="${client.id}" title="Удалить клиента">
+              <i class="fas fa-trash"></i>
+            </button>
           </div>
         </div>
       `).join('')}
@@ -317,7 +320,6 @@ function formatPlate(plate) {
   const sanitizedPlate = plate.replace(/[^a-zA-Zа-яА-Я0-9]/g, '').toUpperCase();
 
   // Regex for Russian format: 1 letter, 3 digits, 2 letters, then 2-3 digits region
-  // e.g., A123BC77 or A123BC777
   const rusRegex = /^([АВЕКМНОРСТУХ])(\d{3})([АВЕКМНОРСТУХ]{2})(\d{2,3})$/;
   const match = sanitizedPlate.match(rusRegex);
 
@@ -327,21 +329,23 @@ function formatPlate(plate) {
     const letters2 = match[3];
     const region = match[4];
 
-    // Construct the main part of the plate with specific classes for styling
     const mainPart = `<span class="plate-letter">${letter1}</span><span class="plate-digits">${digits}</span><span class="plate-letters">${letters2}</span>`;
 
-    return `<div class="license-plate">
-              <div class="plate-main">${mainPart}</div>
-              <div class="plate-region">
-                <span class="region-code">${region}</span>
-                <div class="region-flag">
-                  <div class="flag-white"></div>
-                  <div class="flag-blue"></div>
-                  <div class="flag-red"></div>
-                  <span class="flag-rus">RUS</span>
-                </div>
-              </div>
-            </div>`;
+    return `
+      <div class="license-plate">
+        <div class="plate-main">${mainPart}</div>
+        <div class="plate-region">
+          <span class="region-code">${region}</span>
+          <div class="region-flag-container">
+            <div class="rus-flag">
+              <div class="flag-stripe flag-white"></div>
+              <div class="flag-stripe flag-blue"></div>
+              <div class="flag-stripe flag-red"></div>
+            </div>
+            <span class="flag-rus">RUS</span>
+          </div>
+        </div>
+      </div>`;
   }
 
   // Fallback for non-standard or foreign plates
