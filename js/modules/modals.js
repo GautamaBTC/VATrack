@@ -115,30 +115,29 @@ export function openOrderModal(order = null) {
     if (!isValid) {
         return showNotification('Пожалуйста, заполните все обязательные поля.', 'error');
     }
-    // --- End Validation ---
-
-    // Combine license plate fields
-    data.licensePlate = `${data.licensePlateMain || ''}${data.licensePlateRegion || ''}`;
-    delete data.licensePlateMain;
-    delete data.licensePlateRegion;
-
-    // Add prefix to phone number
-    if (data.clientPhone) {
-      data.clientPhone = `+7${data.clientPhone.replace(/^\+?7/, '')}`;
+    if (!/^\d{10}$/.test(data.clientPhone.replace(/\D/g, ''))) {
+        return showNotification('Телефон должен содержать 10 цифр.', 'error');
     }
-
     if (!data.amount || +data.amount <= 0) {
         showNotification('Сумма должна быть больше нуля.', 'error');
-        form.querySelector('[name="amount"]').classList.add('has-error');
+        form.querySelector('[name="amount"]').closest('.form-group').classList.add('has-error');
         return;
     }
+    // --- End Validation ---
+
+    // Sanitize and format data
+    data.licensePlate = `${(data.licensePlateMain || '').toUpperCase()}${(data.licensePlateRegion || '')}`;
+    delete data.licensePlateMain;
+    delete data.licensePlateRegion;
+    data.clientPhone = `+7${data.clientPhone.replace(/\D/g, '').slice(-10)}`;
     data.amount = +data.amount;
 
     openConfirmationModal({
         title: isEdit ? 'Сохранить изменения?' : 'Добавить заказ-наряд?',
         text: 'Вы уверены, что хотите продолжить?',
         onConfirm: () => {
-            state.socket.emit(isEdit ? 'updateOrder' : 'addOrder', data);
+            const event = isEdit ? 'updateOrder' : 'addOrder';
+            state.socket.emit(event, data);
             closeModal();
         }
     });
@@ -217,12 +216,18 @@ export function openClientModal(client = null) {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
+    // --- Validation ---
     if (!data.name || !data.phone) {
-      return showNotification('Пожалуйста, заполните все обязательные поля.', 'error');
+      return showNotification('Имя и телефон клиента являются обязательными полями.', 'error');
     }
+    if (!/^\d{10}$/.test(data.phone.replace(/\D/g, ''))) {
+        return showNotification('Телефон должен содержать 10 цифр.', 'error');
+    }
+    // --- End Validation ---
 
-    data.phone = `+7${data.phone.replace(/^\+?7/, '')}`;
-    data.licensePlate = `${data.licensePlateMain || ''}${data.licensePlateRegion || ''}`;
+    // Sanitize and format data
+    data.phone = `+7${data.phone.replace(/\D/g, '').slice(-10)}`;
+    data.licensePlate = `${(data.licensePlateMain || '').toUpperCase()}${(data.licensePlateRegion || '')}`;
     delete data.licensePlateMain;
     delete data.licensePlateRegion;
 
@@ -230,7 +235,8 @@ export function openClientModal(client = null) {
       title: isEdit ? 'Сохранить изменения?' : 'Добавить клиента?',
       text: 'Вы уверены, что хотите продолжить?',
       onConfirm: () => {
-        state.socket.emit(isEdit ? 'updateClient' : 'addClient', data);
+        const event = isEdit ? 'updateClient' : 'addClient';
+        state.socket.emit(event, data);
         closeModal();
       }
     });
