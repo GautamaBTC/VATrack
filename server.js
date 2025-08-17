@@ -157,9 +157,24 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('deleteClient', async ({ id }) => {
+  socket.on('deleteClient', async (payload) => {
+    console.log('--- DEBUG: deleteClient event received ---');
+    console.log('Raw payload:', payload);
+    console.log('Type of payload:', typeof payload);
+
+    // Let's manually destructure to be safe
+    const id = payload ? payload.id : undefined;
+
+    console.log('Extracted ID:', id);
+    console.log('Type of ID:', typeof id);
+    console.log('User is privileged:', isPrivileged(socket.user));
+    console.log('Condition check (isPrivileged && id):', isPrivileged(socket.user) && !!id);
+
     if (isPrivileged(socket.user) && id) {
+      console.log('--- DEBUG: Proceeding with delete operation ---');
       await handleDatabaseWrite(socket, db.deleteClient, id);
+    } else {
+      console.log('--- DEBUG: Delete operation skipped due to failed checks ---');
     }
   });
 
