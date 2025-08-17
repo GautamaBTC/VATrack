@@ -142,6 +142,7 @@ module.exports = {
       [id, name, phone, carModel, licensePlate]
     );
   },
+  deleteClient: (id) => query('DELETE FROM clients WHERE id = $1'),
 
   closeWeek: async (payload) => {
     const { salaryReport } = payload;

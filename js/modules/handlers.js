@@ -5,7 +5,7 @@
 
 import { state, isPrivileged } from './state.js';
 import { renderContent, renderOrdersPage, renderArchivePage } from './ui.js';
-import { openOrderModal, openClientModal, openConfirmationModal, openClearDataCaptchaModal, openBonusModal, openArchivedWeekModal, openWeekReportModal, openClientHistoryModal } from './modals.js';
+import { openOrderModal, openClientModal, openConfirmationModal, openClearDataCaptchaModal, openDeleteClientCaptchaModal, openBonusModal, openArchivedWeekModal, openWeekReportModal, openClientHistoryModal } from './modals.js';
 import { logout } from './app.js';
 import { showNotification, downloadCSV } from './utils.js';
 
@@ -60,6 +60,7 @@ export function handleAction(target) {
       if (order) openOrderModal(order);
     },
     'delete-order': () => openConfirmationModal({ title: 'Подтвердить удаление', onConfirm: () => state.socket.emit('deleteOrder', id) }),
+    'delete-client': () => openDeleteClientCaptchaModal(id),
     'award-bonus': () => {
       if (masterName) openBonusModal(masterName);
     },

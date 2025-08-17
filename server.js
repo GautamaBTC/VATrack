@@ -149,6 +149,13 @@ io.on('connection', async (socket) => {
     }
   });
 
+  socket.on('deleteClient', async (id) => {
+    if (isPrivileged(socket.user)) {
+      await db.deleteClient(id);
+      await broadcastUpdates();
+    }
+  });
+
   socket.on('addOrder', async (orderData) => {
     if (!isPrivileged(socket.user)) orderData.masterName = socket.user.name;
 
