@@ -77,9 +77,6 @@ function renderClientsPage() {
             <button class="btn btn-secondary btn-sm" data-action="view-client-history" data-id="${client.id}" title="История клиента">
               <i class="fas fa-history"></i>
             </button>
-            <button class="btn btn-danger btn-sm" data-action="delete-client" data-id="${client.id}" title="Удалить клиента">
-              <i class="fas fa-trash"></i>
-            </button>
           </div>
         </div>
       `).join('')}
