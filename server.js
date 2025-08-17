@@ -135,6 +135,7 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('addClient', async (clientData) => {
+    console.log('Received addClient event with data:', clientData);
     if (isPrivileged(socket.user)) {
       const newClient = { ...clientData, id: `client-${Date.now()}` };
       await db.addClient(newClient);
@@ -143,6 +144,7 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('updateClient', async (clientData) => {
+    console.log('Received updateClient event with data:', clientData);
     if (isPrivileged(socket.user)) {
       await db.updateClient(clientData);
       await broadcastUpdates();
@@ -157,6 +159,7 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('addOrder', async (orderData) => {
+    console.log('Received addOrder event with data:', orderData);
     if (!isPrivileged(socket.user)) orderData.masterName = socket.user.name;
 
     const { clientName, clientPhone, carModel, licensePlate } = orderData;
