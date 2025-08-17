@@ -157,7 +157,7 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('deleteClient', async (id) => {
+  socket.on('deleteClient', async ({ id }) => {
     if (isPrivileged(socket.user) && id) {
       await handleDatabaseWrite(socket, db.deleteClient, id);
     }
@@ -201,7 +201,7 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('deleteOrder', async (id) => {
+  socket.on('deleteOrder', async ({ id }) => {
     if (isPrivileged(socket.user) && id) {
       await handleDatabaseWrite(socket, db.deleteOrder, id);
     }

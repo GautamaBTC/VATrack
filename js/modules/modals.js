@@ -302,7 +302,7 @@ export function openDeleteClientCaptchaModal(clientId) {
     const captchaInput = modal.querySelector('#captcha-input');
     const confirmBtn = modal.querySelector('#confirm-delete-client');
     captchaInput.addEventListener('input', () => { confirmBtn.disabled = captchaInput.value !== captcha; });
-    confirmBtn.addEventListener('click', () => { state.socket.emit('deleteClient', clientId); closeModal(); });
+    confirmBtn.addEventListener('click', () => { state.socket.emit('deleteClient', { id: clientId }); closeModal(); });
 }
 
 export function openArchivedWeekModal(weekData) {
