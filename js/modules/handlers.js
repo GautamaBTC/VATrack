@@ -5,7 +5,7 @@
 
 import { state, isPrivileged } from './state.js';
 import { renderContent, renderOrdersPage, renderArchivePage } from './ui.js';
-import { openOrderModal, openClientModal, openConfirmationModal, openClearDataCaptchaModal, openBonusModal, openArchivedWeekModal, openWeekReportModal, openClientHistoryModal } from './modals.js';
+import { openOrderModal, openClientModal, openConfirmationModal, openClearDataCaptchaModal, openBonusModal, openArchivedWeekModal, openWeekReportModal, openClientHistoryModal, openDeleteClientModal } from './modals.js';
 import { logout } from './app.js';
 import { showNotification, downloadCSV } from './utils.js';
 
@@ -29,6 +29,16 @@ export function handleAction(target) {
     'view-client-history': () => {
         const client = state.data.clients.find(c => c.id === id);
         if (client) openClientHistoryModal(client);
+    },
+    'delete-client': () => {
+        const client = state.data.clients.find(c => c.id === id);
+        if (client) openDeleteClientModal(client);
+    },
+    'toggle-favorite-client': () => {
+        const client = state.data.clients.find(c => c.id === id);
+        if (client) {
+            state.socket.emit('toggleFavoriteClient', { id: client.id, favorite: !client.favorite });
+        }
     },
     'view-clients': () => document.querySelector('.nav-tab[data-tab="clients"]').click(),
     'export-csv-archive': () => exportData(),
@@ -156,6 +166,11 @@ export function initEventListeners() {
     renderOrdersPage();
   });
 
+  document.getElementById('favorite-client-toggle')?.addEventListener('change', (e) => {
+    state.showOnlyFavoriteClients = e.target.checked;
+    renderContent();
+  });
+
   // Home dashboard period toggle
   const periodToggle = document.querySelector('.period-toggle');
   if (periodToggle) {
@@ -176,6 +191,25 @@ export function initEventListeners() {
   }
 
   // Event delegation for dynamically added elements
+  document.body.addEventListener('input', e => {
+    if (e.target.classList.contains('bonus-slider')) {
+      const masterName = e.target.dataset.masterName;
+      const percentage = e.target.value;
+      const salaryItem = document.querySelector(`.salary-item[data-master-name="${masterName}"]`);
+      if (salaryItem) {
+        const bonusSpan = salaryItem.querySelector('.bonus-percentage');
+        const finalSalarySpan = salaryItem.querySelector('.final-salary');
+        const baseSalary = parseFloat(finalSalarySpan.dataset.baseSalary);
+        const bonusAmount = baseSalary * (percentage / 100);
+        const finalSalary = baseSalary + bonusAmount;
+
+        bonusSpan.textContent = `${percentage}%`;
+        finalSalarySpan.textContent = formatCurrency(finalSalary);
+        salaryItem.dataset.bonus = bonusAmount; // Store bonus amount
+      }
+    }
+  });
+
   document.body.addEventListener('click', e => {
       if (e.target.id === 'finalize-week-btn') {
           finalizeWeek();
@@ -201,7 +235,41 @@ export function initEventListeners() {
               document.getElementById('client-search-history').classList.remove('active');
           }
       }
+
+      const tooltipIcon = e.target.closest('.tooltip-icon');
+        if (tooltipIcon) {
+            e.stopPropagation();
+            const message = tooltipIcon.dataset.tooltip;
+            if (message) {
+                showTooltip(tooltipIcon, message);
+            }
+        } else {
+            hideTooltip();
+        }
   });
+}
+
+function showTooltip(element, message) {
+    hideTooltip(); // Remove any existing tooltips
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    tooltip.textContent = message;
+    document.body.appendChild(tooltip);
+
+    const rect = element.getBoundingClientRect();
+    tooltip.style.left = `${rect.left + window.scrollX}px`;
+    tooltip.style.top = `${rect.bottom + window.scrollY + 5}px`;
+
+    requestAnimationFrame(() => {
+        tooltip.classList.add('show');
+    });
+}
+
+function hideTooltip() {
+    const existingTooltip = document.querySelector('.tooltip');
+    if (existingTooltip) {
+        existingTooltip.remove();
+    }
 }
 
 function handleClientSearch(query, resultsContainerId) {

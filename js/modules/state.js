@@ -18,6 +18,7 @@ export const state = {
     history: []
   },
   selectedMaster: 'all',
+  showOnlyFavoriteClients: false,
 };
 
 export function isPrivileged() {

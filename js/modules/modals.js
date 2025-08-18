@@ -389,6 +389,50 @@ export function openClientHistoryModal(client) {
     renderOrdersList(modal.querySelector('#client-history-orders-container'), clientOrders, 'history_modal');
 }
 
+export function openDeleteClientModal(client) {
+    closeModal();
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    const answer = num1 + num2;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop show';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Удалить клиента?</h3>
+                <button class="modal-close-btn" data-action="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить клиента <strong>${client.name}</strong>? Это действие нельзя будет отменить.</p>
+                <p>Для подтверждения, пожалуйста, решите пример: <strong>${num1} + ${num2} = ?</strong></p>
+                <div class="form-group">
+                    <input type="number" id="captcha-input" class="form-control" autocomplete="off" inputmode="numeric">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-client" disabled>Удалить</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', (e) => { if (e.target.closest('[data-action="close-modal"]') || e.target === modal) closeModal(); });
+
+    const captchaInput = modal.querySelector('#captcha-input');
+    const confirmBtn = modal.querySelector('#confirm-delete-client');
+
+    captchaInput.addEventListener('input', () => {
+        confirmBtn.disabled = parseInt(captchaInput.value, 10) !== answer;
+    });
+
+    confirmBtn.addEventListener('click', () => {
+        state.socket.emit('deleteClient', { id: client.id });
+        closeModal();
+    });
+}
+
 export function openWeekReportModal(weekData) {
     closeModal();
     const modal = document.createElement('div');

@@ -81,7 +81,6 @@
       <div class="section">
         <div class="section-header"><h3 class="section-title">Быстрые действия</h3></div>
         <div class="quick-actions-grid">
-          <button class="btn btn-accent" data-action="add-order"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
           <button class="btn btn-success privileged-only" data-action="close-week"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
           <button class="btn btn-secondary privileged-only quick-action-bottom" data-action="view-clients"><i class="fas fa-users"></i> Клиенты</button>
         </div>
@@ -94,7 +93,12 @@
     
     <div id="orders" class="tab-content">
       <div class="section">
-        <div class="section-header"><h3 class="section-title">Заказ-наряды</h3></div>
+        <div class="section-header">
+          <h3 class="section-title">Заказ-наряды</h3>
+          <button class="btn btn-sm btn-success" data-action="add-order" style="margin-left: auto;">
+            <i class="fas fa-plus"></i> Добавить заказ-наряд
+          </button>
+        </div>
         <div id="orders-stats-container" class="section-content" style="padding: 16px; border-bottom: 1px solid var(--border);"></div>
         <div class="section-content order-filters privileged-only">
           <div class="form-group">
@@ -129,6 +133,13 @@
       <div class="section">
         <div class="section-header">
           <h3 class="section-title">Список клиентов</h3>
+          <div class="client-filters">
+            <label class="toggle-switch">
+              <input type="checkbox" id="favorite-client-toggle">
+              <span class="slider"></span>
+            </label>
+            <label for="favorite-client-toggle">Только избранные</label>
+          </div>
           <button class="btn btn-sm btn-success" data-action="add-client" style="margin-left: auto;">
             <i class="fas fa-plus"></i> Добавить клиента
           </button>

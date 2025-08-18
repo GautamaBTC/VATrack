@@ -4,7 +4,7 @@
 ─────────────────────────────────────────────*/
 
 import { state, isPrivileged } from './state.js';
-import { formatCurrency, formatDateTime, canEditOrder } from './utils.js';
+import { formatCurrency, formatDateTime, canEditOrder, formatLicensePlate } from './utils.js';
 
 export function updateAndRender(data, isInitialLoad = false) {
   state.data = data;
@@ -42,7 +42,10 @@ function renderClientsPage() {
   const container = document.getElementById('client-list-container');
   if (!container) return;
 
-  const clients = state.data.clients || [];
+  let clients = state.data.clients || [];
+  if (state.showOnlyFavoriteClients) {
+    clients = clients.filter(client => client.favorite);
+  }
 
   // Add client count stats
   const statsContainer = document.querySelector('#clients .section-header');
@@ -63,19 +66,25 @@ function renderClientsPage() {
   container.innerHTML = `
     <div class="client-list">
       ${clients.map(client => `
-        <div class="client-list-item">
+        <div class="client-list-item" data-favorite="${client.favorite}">
           <div class="client-info">
             <span class="client-name">${client.name}</span>
-            <a href="tel:${client.phone}" class="client-phone"><i class="fas fa-phone"></i> ${client.phone}</a>
             <span class="client-car-model">${client.carModel || ''}</span>
-            ${formatPlate(client.licensePlate || '')}
+            <div class="license-plate-container">${formatLicensePlate(client.licensePlate)}</div>
+            <a href="tel:${client.phone}" class="client-phone"><i class="fas fa-phone"></i> ${client.phone}</a>
           </div>
           <div class="client-actions">
+            <button class="btn btn-secondary btn-sm" data-action="toggle-favorite-client" data-id="${client.id}" title="В избранное">
+                <i class="${client.favorite ? 'fas' : 'far'} fa-star"></i>
+            </button>
             <button class="btn btn-secondary btn-sm" data-action="edit-client" data-id="${client.id}" title="Редактировать">
               <i class="fas fa-pen"></i>
             </button>
             <button class="btn btn-secondary btn-sm" data-action="view-client-history" data-id="${client.id}" title="История клиента">
               <i class="fas fa-history"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" data-action="delete-client" data-id="${client.id}" title="Удалить">
+              <i class="fas fa-trash"></i>
             </button>
           </div>
         </div>
@@ -136,47 +145,35 @@ export function renderOrdersPage() {
 
 export function renderArchivePage() {
     const container = document.getElementById('archiveListContainer');
-    const datePickerInput = document.getElementById('archive-date-picker');
+    if (!container) return;
 
-    // Check if flatpickr instance exists and has selected dates
-    if (datePickerInput && datePickerInput._flatpickr && datePickerInput._flatpickr.selectedDates.length === 2) {
-        const allArchivedOrders = state.data.history.flatMap(h => h.orders);
-        const [start, end] = datePickerInput._flatpickr.selectedDates;
-
-        // Ensure the end date covers the entire day
-        const endOfDay = new Date(end.getTime());
-        endOfDay.setHours(23, 59, 59, 999);
-
-        const filteredOrders = allArchivedOrders.filter(order => {
-            if (!order.createdAt) return false;
-            const orderDate = new Date(order.createdAt);
-            return orderDate >= start && orderDate <= endOfDay;
-        });
-        renderOrdersList(container, filteredOrders);
-    } else {
-        if (!state.data.history?.length) {
-            container.innerHTML = '<div class="empty-state"><p>Архив пуст.</p></div>';
-            return;
-        }
-
-        container.innerHTML = `<div class="week-summary-list">${state.data.history.map(week => {
-            const weekRevenue = week.orders.reduce((sum, o) => sum + o.amount, 0);
-            const sortedOrders = [...week.orders].sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
-            const firstOrderDate = sortedOrders.length > 0 ? formatDate(sortedOrders[0].createdAt) : 'N/A';
-            const lastOrderDate = sortedOrders.length > 0 ? formatDate(sortedOrders[sortedOrders.length - 1].createdAt) : 'N/A';
-            return `
-                <div class="week-summary-item" data-action="view-archived-week" data-week-id="${week.weekId}">
-                    <div class="week-summary-header">
-                        <span class="week-date">Неделя: ${firstOrderDate} - ${lastOrderDate}</span>
-                        <span class="week-revenue">${formatCurrency(weekRevenue)}</span>
-                    </div>
-                    <div class="week-summary-meta">
-                        <span>Заказ-нарядов: ${week.orders.length}</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-                </div>`;
-        }).join('')}</div>`;
+    const history = state.data.history || [];
+    if (history.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>Архив пуст.</p></div>';
+        return;
     }
+
+    // TODO: Add search and sort functionality
+    container.innerHTML = `
+        <div class="salary-history-list">
+            <div class="salary-history-header">
+                <span>Дата</span>
+                <span>Мастер</span>
+                <span>Базовая ЗП</span>
+                <span>Бонус</span>
+                <span>Итого</span>
+            </div>
+            ${history.flatMap(week => week.salaryReport ? JSON.parse(week.salaryReport).map(report => `
+                <div class="salary-history-item">
+                    <span>${formatDate(week.createdAt)}</span>
+                    <span>${report.name}</span>
+                    <span>${formatCurrency(report.baseSalary)}</span>
+                    <span>${formatCurrency(report.bonus)}</span>
+                    <span>${formatCurrency(report.finalSalary)}</span>
+                </div>
+            `).join('') : '').join('')}
+        </div>
+    `;
 }
 
 function renderFinancePage() {
@@ -197,7 +194,7 @@ function renderFinancePage() {
     html += weeklyLeaderboard.map(master => {
       const baseSalary = master.revenue * 0.5;
       return `
-        <div class="salary-item" data-master-name="${master.name}">
+        <div class="salary-item" data-master-name="${master.name}" data-revenue="${master.revenue}">
           <div class="salary-item-header">
             <span class="master-name"><i class="fas fa-user-cog master-icon"></i> ${master.name}</span>
             <span class="final-salary" data-base-salary="${baseSalary}">${formatCurrency(baseSalary)}</span>
@@ -206,8 +203,9 @@ function renderFinancePage() {
             <span>Выручка: <strong>${formatCurrency(master.revenue)}</strong></span>
             <span>База (50%): <strong>${formatCurrency(baseSalary)}</strong></span>
           </div>
-          <div class="salary-actions">
-            <button class="btn btn-secondary btn-sm" data-action="award-bonus" data-master-name="${master.name}"><i class="fas fa-plus"></i> Премировать</button>
+          <div class="salary-bonus">
+            <label>Бонус: <span class="bonus-percentage">0%</span> <i class="fas fa-info-circle tooltip-icon" data-tooltip="Бонус рассчитывается как процент от базовой зарплаты мастера."></i></label>
+            <input type="range" class="bonus-slider" min="0" max="50" step="2" value="0" data-master-name="${master.name}">
           </div>
         </div>`;
     }).join('');
@@ -310,45 +308,6 @@ function renderMainContributionChart() {
   }).join('')}</div>`;
 }
 
-function formatPlate(plate) {
-  if (!plate) return '';
-
-  // Normalize plate: remove all non-alphanumeric chars and convert to uppercase
-  const sanitizedPlate = plate.replace(/[^a-zA-Zа-яА-Я0-9]/g, '').toUpperCase();
-
-  // Regex for Russian format: 1 letter, 3 digits, 2 letters, then 2-3 digits region
-  const rusRegex = /^([АВЕКМНОРСТУХ])(\d{3})([АВЕКМНОРСТУХ]{2})(\d{2,3})$/;
-  const match = sanitizedPlate.match(rusRegex);
-
-  if (match) {
-    const letter1 = match[1];
-    const digits = match[2];
-    const letters2 = match[3];
-    const region = match[4];
-
-    const mainPart = `<span class="plate-letter">${letter1}</span><span class="plate-digits">${digits}</span><span class="plate-letters">${letters2}</span>`;
-
-    return `
-      <div class="license-plate">
-        <div class="plate-main">${mainPart}</div>
-        <div class="plate-region">
-          <span class="region-code">${region}</span>
-          <div class="region-flag-container">
-            <div class="rus-flag">
-              <div class="flag-stripe flag-white"></div>
-              <div class="flag-stripe flag-blue"></div>
-              <div class="flag-stripe flag-red"></div>
-            </div>
-            <span class="flag-rus">RUS</span>
-          </div>
-        </div>
-      </div>`;
-  }
-
-  // Fallback for non-standard or foreign plates
-  return `<div class="license-plate license-plate-fallback">${sanitizedPlate}</div>`;
-}
-
 export function renderOrdersList(container, orders, context = 'default') {
   if (!container) return;
   if (!orders?.length) {
@@ -368,7 +327,7 @@ export function renderOrdersList(container, orders, context = 'default') {
       <div>
         <div class="order-title">
             <p class="order-description">${order.carModel}</p>
-            ${formatPlate(order.licensePlate)}
+            <div class="license-plate-container">${formatLicensePlate(order.licensePlate)}</div>
         </div>
         <p class="order-work-description">${order.description}</p>
         <div class="order-meta">

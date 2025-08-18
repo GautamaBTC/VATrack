@@ -248,6 +248,16 @@
     height: 40px;
 }
 
+@media (max-width: 768px) {
+  .archive-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-group-actions {
+    justify-content: flex-end;
+  }
+}
+
 .order-filters {
   display: flex;
   gap: 12px;

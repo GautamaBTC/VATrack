@@ -344,3 +344,31 @@
     align-self: flex-end;
   }
 }
+
+/* Tooltip Styles */
+.tooltip-icon {
+  cursor: pointer;
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+.tooltip {
+  position: absolute;
+  background-color: var(--panel-bg);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  font-size: 0.9rem;
+  z-index: 1010;
+  max-width: 250px;
+  text-align: left;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+.tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+}

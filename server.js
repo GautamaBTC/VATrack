@@ -157,6 +157,18 @@ io.on('connection', async (socket) => {
     }
   });
 
+  socket.on('deleteClient', async ({ id }) => {
+    if (isPrivileged(socket.user) && id) {
+      await handleDatabaseWrite(socket, db.deleteClient, id);
+    }
+  });
+
+  socket.on('toggleFavoriteClient', async ({ id, favorite }) => {
+    if (isPrivileged(socket.user) && id) {
+      await handleDatabaseWrite(socket, db.toggleFavoriteClient, id, favorite);
+    }
+  });
+
   socket.on('addOrder', async (orderData) => {
     try {
         if (!isPrivileged(socket.user)) orderData.masterName = socket.user.name;
