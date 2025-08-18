@@ -120,3 +120,16 @@ html[data-theme="dark"] .order-meta a {
   text-decoration-thickness: 1.5px;
   text-decoration-color: var(--text-muted);
 }
+
+@media (max-width: 480px) {
+  .order-item {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .order-amount {
+    text-align: left;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}

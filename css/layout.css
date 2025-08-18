@@ -120,3 +120,15 @@ body.is-privileged .section.privileged-only,
 body.is-privileged .tab-content.privileged-only.active {
     display: block !important;
 }
+
+@media (min-width: 768px) {
+  .main-content {
+    padding: 24px;
+  }
+  .nav-tab i {
+    font-size: 1.2rem;
+  }
+  .nav-tab span {
+    font-size: 0.8rem;
+  }
+}

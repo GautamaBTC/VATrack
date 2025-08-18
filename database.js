@@ -142,6 +142,8 @@ module.exports = {
       [id, name, phone, carModel, licensePlate]
     );
   },
+  deleteClient: (id) => pool.query('DELETE FROM clients WHERE id = $1', [id]),
+  toggleFavoriteClient: (id, favorite) => pool.query('UPDATE clients SET favorite = $2 WHERE id = $1', [id, favorite]),
 
   closeWeek: async (payload) => {
     const { salaryReport } = payload;
