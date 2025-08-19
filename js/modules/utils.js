@@ -7,18 +7,6 @@ export const formatCurrency = (value) => new Intl.NumberFormat('ru-RU', { style:
 
 export const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('ru-RU');
 
-export const formatLicensePlate = (plate) => {
-  if (!plate || typeof plate !== 'string') return 'Нет данных';
-  // This is a simplified formatter. A more robust solution would handle various formats.
-  const cleaned = plate.replace(/\s+/g, '').toUpperCase();
-  const match = cleaned.match(/^([A-ZА-Я])(\d{3})([A-ZА-Я]{2})(\d{2,3})([A-ZА-Я]+)?$/);
-  if (match) {
-    const [_, p1, p2, p3, p4, p5] = match;
-    return `${p1} ${p2} ${p3} ${p4}${p5 ? ` ${p5}` : ''}`;
-  }
-  return cleaned; // Return cleaned plate if it doesn't match the expected format
-};
-
 export const formatDateTime = (dateStr) => {
     const date = new Date(dateStr);
     const options = {

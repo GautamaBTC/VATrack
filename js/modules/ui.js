@@ -4,7 +4,7 @@
 ─────────────────────────────────────────────*/
 
 import { state, isPrivileged } from './state.js';
-import { formatCurrency, formatDateTime, canEditOrder, formatLicensePlate } from './utils.js';
+import { formatCurrency, formatDateTime, canEditOrder } from './utils.js';
 
 export function updateAndRender(data, isInitialLoad = false) {
   state.data = data;
@@ -70,7 +70,7 @@ function renderClientsPage() {
           <div class="client-info">
             <span class="client-name">${client.name}</span>
             <span class="client-car-model">${client.carModel || ''}</span>
-            <div class="license-plate-container">${formatLicensePlate(client.licensePlate)}</div>
+            ${formatPlate(client.licensePlate || '')}
             <a href="tel:${client.phone}" class="client-phone"><i class="fas fa-phone"></i> ${client.phone}</a>
           </div>
           <div class="client-actions">
@@ -327,7 +327,7 @@ export function renderOrdersList(container, orders, context = 'default') {
       <div>
         <div class="order-title">
             <p class="order-description">${order.carModel}</p>
-            <div class="license-plate-container">${formatLicensePlate(order.licensePlate)}</div>
+            ${formatPlate(order.licensePlate)}
         </div>
         <p class="order-work-description">${order.description}</p>
         <div class="order-meta">
@@ -375,4 +375,43 @@ export function renderSearchHistory(history) {
     `).join('')}
   `;
   container.classList.add('active');
+}
+
+function formatPlate(plate) {
+  if (!plate) return '';
+
+  // Normalize plate: remove all non-alphanumeric chars and convert to uppercase
+  const sanitizedPlate = plate.replace(/[^a-zA-Zа-яА-Я0-9]/g, '').toUpperCase();
+
+  // Regex for Russian format: 1 letter, 3 digits, 2 letters, then 2-3 digits region
+  const rusRegex = /^([АВЕКМНОРСТУХ])(\d{3})([АВЕКМНОРСТУХ]{2})(\d{2,3})$/;
+  const match = sanitizedPlate.match(rusRegex);
+
+  if (match) {
+    const letter1 = match[1];
+    const digits = match[2];
+    const letters2 = match[3];
+    const region = match[4];
+
+    const mainPart = `<span class="plate-letter">${letter1}</span><span class="plate-digits">${digits}</span><span class="plate-letters">${letters2}</span>`;
+
+    return `
+      <div class="license-plate">
+        <div class="plate-main">${mainPart}</div>
+        <div class="plate-region">
+          <span class="region-code">${region}</span>
+          <div class="region-flag-container">
+            <div class="rus-flag">
+              <div class="flag-stripe flag-white"></div>
+              <div class="flag-stripe flag-blue"></div>
+              <div class="flag-stripe flag-red"></div>
+            </div>
+            <span class="flag-rus">RUS</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Fallback for non-standard or foreign plates
+  return `<div class="license-plate license-plate-fallback">${sanitizedPlate}</div>`;
 }
