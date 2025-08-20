@@ -73,10 +73,7 @@ export function handleAction(target) {
 
         flatpickrInstance.setDate([startDate, new Date()], true); // true to trigger onChange
     },
-    'close-week': () => {
-        const financeTab = document.querySelector('[data-tab="finance"]');
-        if (financeTab) financeTab.click();
-    },
+    'close-week': () => finalizeWeek(),
     'clear-history': () => openConfirmationModal({ title: 'Очистить историю?', text: 'Все архивные записи будут удалены.', onConfirm: () => state.socket.emit('clearHistory') }),
     'clear-data': () => openClearDataCaptchaModal(),
     'edit-order': () => {
