@@ -146,8 +146,13 @@ io.on('connection', async (socket) => {
 
   socket.on('addClient', async (clientData) => {
     if (isPrivileged(socket.user)) {
-      const newClient = { ...clientData, id: `client-${Date.now()}` };
-      await handleDatabaseWrite(socket, db.addClient, newClient);
+      const existingClient = await db.findClientByPhone(clientData.phone[0]);
+      if (existingClient) {
+        socket.emit('clientExists', existingClient);
+      } else {
+        const newClient = { ...clientData, id: `client-${Date.now()}` };
+        await handleDatabaseWrite(socket, db.addClient, newClient);
+      }
     }
   });
 

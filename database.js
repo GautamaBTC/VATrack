@@ -98,7 +98,7 @@ module.exports = {
   findClientByPhone: async (phone) => {
     const { rows } = await pool.query(`
       SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", created_at AS "createdAt"
-      FROM clients WHERE phone = $1
+      FROM clients WHERE $1 = ANY(phone)
     `, [phone]);
     return rows[0];
   },
@@ -131,7 +131,7 @@ module.exports = {
   addClient: (client) => {
     const { id, name, phone, carModel, licensePlate } = client;
     return pool.query(
-      'INSERT INTO clients (id, name, phone, car_model, license_plate) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (phone) DO NOTHING',
+      'INSERT INTO clients (id, name, phone, car_model, license_plate) VALUES ($1, $2, $3, $4, $5)',
       [id, name, phone, carModel, licensePlate]
     );
   },

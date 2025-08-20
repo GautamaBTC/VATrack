@@ -11,7 +11,7 @@ CREATE TABLE users (
 CREATE TABLE clients (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    phone TEXT UNIQUE,
+    phone TEXT[],
     car_model TEXT,
     license_plate TEXT,
     favorite BOOLEAN DEFAULT FALSE,
