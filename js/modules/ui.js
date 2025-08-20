@@ -384,7 +384,7 @@ function formatPlate(plate) {
   const sanitizedPlate = plate.replace(/[^a-zA-Zа-яА-Я0-9]/g, '').toUpperCase();
 
   // Regex for Russian format: 1 letter, 3 digits, 2 letters, then 2-3 digits region
-  const rusRegex = /^([АВЕКМНОРСТУХ])(\d{3})([АВЕКМНОРСТУХ]{2})(\d{2,3})$/;
+  const rusRegex = /^([A-ZА-Я])(\d{3})([A-ZА-Я]{2})(\d{2,3})$/;
   const match = sanitizedPlate.match(rusRegex);
 
   if (match) {

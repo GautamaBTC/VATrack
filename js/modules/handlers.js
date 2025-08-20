@@ -11,6 +11,20 @@ import { showNotification, downloadCSV } from './utils.js';
 
 let flatpickrInstance = null;
 
+export function initSocketEventHandlers() {
+    state.socket.on('clientExists', (existingClient) => {
+        openConfirmationModal({
+            title: 'Клиент уже существует',
+            text: `Клиент с таким номером телефона уже существует: <strong>${existingClient.name}</strong>. Хотите перейти к его карточке?`,
+            onConfirm: () => {
+                const clientsTab = document.querySelector('[data-tab="clients"]');
+                if (clientsTab) clientsTab.click();
+                // TODO: Add logic to highlight the existing client
+            }
+        });
+    });
+}
+
 export function handleAction(target) {
   const { action, id, masterName, weekId, period, status } = target.dataset;
 
