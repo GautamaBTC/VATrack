@@ -40,7 +40,27 @@ const tableExists = async (tableName) => {
 };
 
 /**
- * Initializes the database schema from schema.sql if tables do not exist
+ * Checks if a specific column exists in a table
+ * @param {string} tableName - The name of the table
+ * @param {string} columnName - The name of the column
+ * @returns {Promise<boolean>}
+ */
+const columnExists = async (tableName, columnName) => {
+    const res = await query(`
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+            AND table_name = $1
+            AND column_name = $2
+        );
+    `, [tableName, columnName]);
+    return res.rows[0].exists;
+};
+
+
+/**
+ * Initializes the database schema and performs necessary migrations.
  */
 const initSchema = async () => {
     const usersTableExists = await tableExists('users');
@@ -52,11 +72,24 @@ const initSchema = async () => {
             console.log('[DB] Schema initialized successfully.');
         } catch (err) {
             console.error('!!! SCHEMA INITIALIZATION ERROR:', err);
-            // If an error occurs, it might be best to stop the application
             process.exit(1);
         }
     } else {
-        console.log('[DB] Tables already exist. Skipping schema initialization.');
+        console.log('[DB] Tables already exist. Checking for necessary migrations...');
+        // Migration: Add 'favorite' column to 'clients' table if it doesn't exist
+        const favoriteColumnExists = await columnExists('clients', 'favorite');
+        if (!favoriteColumnExists) {
+            console.log("[DB] Migrating: Adding 'favorite' column to 'clients' table...");
+            try {
+                await query('ALTER TABLE clients ADD COLUMN favorite BOOLEAN DEFAULT FALSE;');
+                console.log("[DB] Migration successful.");
+            } catch (err) {
+                console.error('!!! MIGRATION ERROR (favorite column):', err);
+                process.exit(1);
+            }
+        } else {
+            console.log("[DB] 'favorite' column already exists. No migration needed.");
+        }
     }
 };
 
