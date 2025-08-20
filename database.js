@@ -92,19 +92,19 @@ module.exports = {
     FROM weekly_reports ORDER BY created_at DESC
   `),
   getClients: () => pool.query(`
-    SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", created_at AS "createdAt"
+    SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", favorite, created_at AS "createdAt"
     FROM clients ORDER BY created_at DESC
   `),
   findClientByPhone: async (phone) => {
     const { rows } = await pool.query(`
-      SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", created_at AS "createdAt"
+      SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", favorite, created_at AS "createdAt"
       FROM clients WHERE $1 = ANY(phone)
     `, [phone]);
     return rows[0];
   },
   searchClients: async (searchQuery) => {
     const { rows } = await pool.query(`
-        SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", created_at AS "createdAt"
+        SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", favorite, created_at AS "createdAt"
         FROM clients WHERE name ILIKE $1 OR phone ILIKE $1 LIMIT 10
     `, [`%${searchQuery}%`]);
     return rows;
