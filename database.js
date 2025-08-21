@@ -59,6 +59,46 @@ const columnExists = async (tableName, columnName) => {
 };
 
 
+const migrateUserData = async () => {
+    console.log('[DB] Checking for user data migration...');
+    const client = await pool.connect();
+    try {
+        const { rows } = await client.query("SELECT login, password FROM users WHERE login = 'director'");
+        const director = rows[0];
+
+        if (director && !director.password.startsWith('$2b$')) {
+            console.log('[DB] Old password format detected. Migrating user data...');
+            await client.query('BEGIN');
+
+            const usersToUpdate = [
+                { oldLogin: 'director', newLogin: 'Chief.Orlov', newHash: '$2b$10$84KZgSt.ff9HxRH9r3gwoeiOWxEdhRDVRSIYdeUMfrmkZMvNrumC6' },
+                { oldLogin: 'vladimir.ch', newLogin: 'Senior.Vlad', newHash: '$2b$10$a6LiDKCDIx2og0OurlINnuXEeQSLSod7RIiz.D2Q6qS.gfN0Aoe9C' },
+                { oldLogin: 'vladimir.a', newLogin: 'Master.Vladimir', newHash: '$2b$10$FfGiyFpGSU/QWJnyi1MfyO/fV0t24g08Cn20JO6UVUjWfXi2TeZ.m' },
+                { oldLogin: 'andrey', newLogin: 'Master.Andrey', newHash: '$2b$10$7f.bppgfTDTCfCIXazUnnO/cyuvmtN0bTJEUCkdqH1mcGtkEtjiGC' },
+                { oldLogin: 'danila', newLogin: 'Master.Danila', newHash: '$2b$10$aqoFMafFJFCNsk9ObMyE9.M6sHcJMLm1IF5iAGoGnhWbW.F2FTv5y' },
+                { oldLogin: 'maxim', newLogin: 'Master.Maxim', newHash: '$2b$10$zINh15CF1qvguPHXwc6Bn.JK1WhsXbakNJa/N.loZUheGUoRsXTPi' },
+                { oldLogin: 'artyom', newLogin: 'Master.Artyom', newHash: '$2b$10$fPZ1F9DFYeJZXulbdSREa.zlSFq2I.hLL9qp8CGQAA3DeCnLn0/uK' }
+            ];
+
+            for (const user of usersToUpdate) {
+                await client.query('UPDATE users SET login = $1, password = $2 WHERE login = $3', [user.newLogin, user.newHash, user.oldLogin]);
+            }
+
+            await client.query('COMMIT');
+            console.log('[DB] User data migration successful.');
+        } else {
+            console.log('[DB] User data is already up-to-date. No migration needed.');
+        }
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('!!! USER DATA MIGRATION ERROR:', err);
+        process.exit(1);
+    } finally {
+        client.release();
+    }
+};
+
+
 /**
  * Initializes the database schema and performs necessary migrations.
  */
@@ -76,20 +116,24 @@ const initSchema = async () => {
         }
     } else {
         console.log('[DB] Tables already exist. Checking for necessary migrations...');
-        // Migration: Add 'favorite' column to 'clients' table if it doesn't exist
+
+        // Migration 1: Add 'favorite' column to 'clients' table if it doesn't exist
         const favoriteColumnExists = await columnExists('clients', 'favorite');
         if (!favoriteColumnExists) {
-            console.log("[DB] Migrating: Adding 'favorite' column to 'clients' table...");
+            console.log("[DB] Migrating schema: Adding 'favorite' column to 'clients' table...");
             try {
                 await query('ALTER TABLE clients ADD COLUMN favorite BOOLEAN DEFAULT FALSE;');
-                console.log("[DB] Migration successful.");
+                console.log("[DB] Schema migration for 'favorite' column successful.");
             } catch (err) {
-                console.error('!!! MIGRATION ERROR (favorite column):', err);
+                console.error("!!! MIGRATION ERROR ('favorite' column):", err);
                 process.exit(1);
             }
         } else {
-            console.log("[DB] 'favorite' column already exists. No migration needed.");
+            console.log("[DB] 'favorite' column already exists. Skipping schema migration.");
         }
+
+        // Migration 2: Update user logins and passwords to new hashed format
+        await migrateUserData();
     }
 };
 
