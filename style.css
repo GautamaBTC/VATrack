@@ -15,7 +15,6 @@
 @import url('./css/layout.css');
 
 /* 4. Компоненты */
-@import url('./css/components/sidebar.css');
 @import url('./css/components/buttons.css');
 @import url('./css/components/dashboard.css');
 @import url('./css/components/order-item.css');

@@ -1,50 +1,43 @@
 /* 5. Основная структура приложения */
-
-/* Desktop-first: Sidebar layout */
-.app-container {
-    display: flex;
-}
-
-.main-container {
-    flex-grow: 1;
-    margin-left: var(--sidebar-width-expanded);
-    transition: margin-left 0.3s ease;
-}
-
-html[data-sidebar-state="collapsed"] .main-container {
-    margin-left: var(--sidebar-width-collapsed);
-}
-
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: var(--header-height);
-  padding: 0 24px;
-  background-color: var(--panel-bg);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 999;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  padding: 0 16px;
+  background: color-mix(in srgb, var(--panel-bg) 85%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  z-index: 1000;
+  gap: 16px;
 }
-
-.page-title-header {
-    font-size: 1.5rem;
-    font-weight: 600;
-}
-
 .header-controls {
   display: flex;
   align-items: center;
   gap: 12px;
 }
-
-.main-content {
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
+.app-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.app-title .title-auto {
+  color: var(--text);
+}
+#user-name-display {
+  font-weight: 500;
 }
 
+.main-content {
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 .tab-content {
   display: none;
 }
@@ -56,35 +49,17 @@ html[data-sidebar-state="collapsed"] .main-container {
   from { opacity: 0; } to { opacity: 1; }
 }
 
-.section {
-  background: var(--panel-bg);
-  border-radius: var(--radius);
-  margin-bottom: 16px;
-  border: 1px solid var(--border);
-}
-
-.section-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* Mobile Tab Navigation */
 .nav-container {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 65px; /* Using fixed value as --nav-height was removed */
+  height: var(--nav-height);
   z-index: 1000;
   background: color-mix(in srgb, var(--panel-bg) 85%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid var(--border);
-  display: none; /* Hidden by default on desktop */
 }
 .nav-tabs {
   display: flex;
@@ -103,53 +78,57 @@ html[data-sidebar-state="collapsed"] .main-container {
   background: none;
   transition: var(--transition);
 }
-.nav-tab.active {
-  color: var(--accent);
-  font-weight: 600;
+.nav-tab.active { color: #166534; } /* Dark Green for Home */
+.nav-tab[data-tab="finance"].active { color: var(--gold); }
+.nav-tab[data-tab="clients"].active { color: #2563eb; } /* Blue */
+.nav-tab[data-tab="archive"].active { color: #ffffff; text-shadow: 0 0 3px rgba(0,0,0,0.4); }
+.nav-tab[data-tab="orders"].active { color: #dc2626; } /* Red */
+
+/* Light theme overrides for active nav icons */
+html:not([data-theme="dark"]) .nav-tab[data-tab="finance"].active {
+    color: var(--bronze); /* Dark Yellow */
 }
+html:not([data-theme="dark"]) .nav-tab[data-tab="archive"].active {
+    color: #475569; /* Dark Slate Gray */
+    text-shadow: none;
+}
+
 .nav-tab i { font-size: 1.5rem; }
 .nav-tab span { font-size: 0.7rem; }
 
+.section {
+  background: var(--panel-bg);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.section-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
 
-/* Privileged Styles */
 .privileged-only { display: none !important; }
 
-body.is-privileged .nav-link.privileged-only,
-body.is-privileged .nav-tab.privileged-only {
+/* Show privileged elements correctly based on their type */
+body.is-privileged .nav-tab.privileged-only,
+body.is-privileged .quick-actions-grid .btn.privileged-only {
     display: flex !important;
 }
 
 body.is-privileged .section.privileged-only,
-body.is-privileged .tab-content.privileged-only,
-body.is-privileged .quick-action-bottom.privileged-only {
+body.is-privileged .tab-content.privileged-only.active {
     display: block !important;
 }
 
-body.is-privileged .quick-actions-grid .quick-action-bottom.privileged-only {
-    display: flex !important;
-}
-
-
-/* Responsive Breakpoint for Hybrid Navigation */
-@media (max-width: 768px) {
-    #sidebar {
-        display: none;
-    }
-
-    .main-container {
-        margin-left: 0;
-    }
-
-    .main-content {
-        padding: 16px;
-        padding-bottom: 80px; /* Space for bottom nav */
-    }
-
-    .nav-container {
-        display: block;
-    }
-
-    .page-header {
-        padding: 0 16px;
-    }
+@media (min-width: 768px) {
+  .main-content {
+    padding: 24px;
+  }
+  .nav-tab i {
+    font-size: 1.2rem;
+  }
+  .nav-tab span {
+    font-size: 0.8rem;
+  }
 }
