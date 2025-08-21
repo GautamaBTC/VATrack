@@ -42,7 +42,7 @@ CREATE TABLE orders (
 
 CREATE TABLE search_history (
     id TEXT PRIMARY KEY,
-    user_login TEXT REFERENCES users(login) ON DELETE CASCADE,
+    user_login TEXT REFERENCES users(login) ON DELETE CASCADE ON UPDATE CASCADE,
     query TEXT NOT NULL,
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
