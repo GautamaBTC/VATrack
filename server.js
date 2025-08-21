@@ -8,6 +8,7 @@ const express = require('express');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const db = require('./database');
+const bcrypt = require('bcrypt');
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-for-vipauto-dont-share-it';
@@ -99,12 +100,27 @@ const broadcastUpdates = async () => {
 };
 
 app.post('/login', async (req, res) => {
-  const { login, password } = req.body;
-  const users = await db.getUsers();
-  const userRecord = users[login];
-  if (!userRecord || userRecord.password !== password) return res.status(401).json({ message: 'Invalid login or password' });
-  const token = jwt.sign({ login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
-  res.json({ token, user: { login, name: userRecord.name, role: userRecord.role } });
+    const { login, password } = req.body;
+    try {
+        const users = await db.getUsers();
+        const userRecord = users[login];
+
+        if (!userRecord) {
+            return res.status(401).json({ message: 'Invalid login or password' });
+        }
+
+        const isMatch = await bcrypt.compare(password, userRecord.password);
+
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid login or password' });
+        }
+
+        const token = jwt.sign({ login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
+        res.json({ token, user: { login, name: userRecord.name, role: userRecord.role } });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Server error during login' });
+    }
 });
 
 io.use((socket, next) => {
