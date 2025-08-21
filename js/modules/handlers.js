@@ -103,18 +103,27 @@ export function handleAction(target) {
 }
 
 export function handleTabSwitch(target) {
+  if (!target) return;
   const tabId = target.dataset.tab;
-  if (state.activeTab === tabId) return;
+  if (state.activeTab === tabId && document.querySelector('.tab-content.active')) return;
 
   localStorage.setItem('vipauto_active_tab', tabId);
 
-  document.querySelector('.nav-tab.active')?.classList.remove('active');
+  // Update active link in sidebar
+  document.querySelector('.nav-link.active')?.classList.remove('active');
   target.classList.add('active');
-  document.querySelector('.tab-content.active')?.classList.remove('active');
 
+  // Update main content visibility
+  document.querySelector('.tab-content.active')?.classList.remove('active');
   const newTabContent = document.getElementById(tabId);
   if (newTabContent) {
     newTabContent.classList.add('active');
+  }
+
+  // Update page title
+  const pageTitle = document.getElementById('page-title');
+  if(pageTitle) {
+    pageTitle.textContent = target.querySelector('.sidebar-text').textContent;
   }
 
   state.activeTab = tabId;

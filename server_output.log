@@ -1,0 +1,12 @@
+!!! FAILED TO START SERVER: Error: connect ECONNREFUSED 127.0.0.1:5432
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async tableExists (/app/database.js:32:15)
+    at async Object.initSchema [as loadDB] (/app/database.js:106:30)
+    at async Server.<anonymous> (/app/server.js:265:5) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432
+}
