@@ -104,6 +104,45 @@ const migrateUserData = async () => {
 };
 
 
+const migrateForeignKeyConstraint = async () => {
+    console.log('[DB] Checking for foreign key constraint migration...');
+    const client = await pool.connect();
+    const constraintName = 'search_history_user_login_fkey';
+    try {
+        const res = await client.query(`
+            SELECT confupdtype
+            FROM pg_catalog.pg_constraint
+            WHERE conname = $1
+        `, [constraintName]);
+
+        // 'c' = cascade, 'a' = no action, 'r' = restrict, 'n' = set null, 'd' = set default
+        if (res.rows.length > 0 && res.rows[0].confupdtype !== 'c') {
+            console.log(`[DB] Foreign key constraint '${constraintName}' needs migration. Current type: ${res.rows[0].confupdtype}.`);
+            await client.query('BEGIN');
+            await client.query(`ALTER TABLE search_history DROP CONSTRAINT ${constraintName}`);
+            await client.query(`
+                ALTER TABLE search_history
+                ADD CONSTRAINT ${constraintName}
+                FOREIGN KEY (user_login)
+                REFERENCES users(login)
+                ON DELETE CASCADE ON UPDATE CASCADE
+            `);
+            await client.query('COMMIT');
+            console.log(`[DB] Foreign key '${constraintName}' migrated successfully to ON UPDATE CASCADE.`);
+        } else if (res.rows.length === 0) {
+            console.log(`[DB] Constraint '${constraintName}' not found. Assuming schema is up-to-date or new.`);
+        } else {
+            console.log(`[DB] Foreign key '${constraintName}' is already up-to-date.`);
+        }
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('!!! FOREIGN KEY MIGRATION ERROR:', err);
+        process.exit(1);
+    } finally {
+        client.release();
+    }
+};
+
 /**
  * Initializes the database schema and performs necessary migrations.
  */
@@ -122,10 +161,10 @@ const initSchema = async () => {
     } else {
         console.log('[DB] Tables already exist. Checking for necessary migrations...');
 
-        // Migration 1: Add 'favorite' column to 'clients' table if it doesn't exist
+        // Migration 1: Add 'favorite' column to 'clients' table
         const favoriteColumnExists = await columnExists('clients', 'favorite');
         if (!favoriteColumnExists) {
-            console.log("[DB] Migrating schema: Adding 'favorite' column to 'clients' table...");
+            console.log("[DB] Migrating schema: Adding 'favorite' column...");
             try {
                 await query('ALTER TABLE clients ADD COLUMN favorite BOOLEAN DEFAULT FALSE;');
                 console.log("[DB] Schema migration for 'favorite' column successful.");
@@ -134,10 +173,13 @@ const initSchema = async () => {
                 process.exit(1);
             }
         } else {
-            console.log("[DB] 'favorite' column already exists. Skipping schema migration.");
+            console.log("[DB] 'favorite' column already exists. Skipping.");
         }
 
-        // Migration 2: Update user logins and passwords to new hashed format
+        // Migration 2: Ensure foreign key on search_history has ON UPDATE CASCADE
+        await migrateForeignKeyConstraint();
+
+        // Migration 3: Update user logins and passwords to new hashed format
         await migrateUserData();
     }
 };
