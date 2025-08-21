@@ -8,30 +8,41 @@ import { state } from './state.js';
 import { initSocketConnection } from './socket.js';
 import { initEventListeners, handleAction, handleTabSwitch } from './handlers.js';
 import { showNotification } from './utils.js';
+import { initSidebar } from './sidebar.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   try {
     if (!initAuth()) return;
     initTheme();
+    initSidebar();
     initSocketConnection();
     initEventListeners();
 
-    // Determine the initial tab, but don't activate it yet
+    // Determine the initial tab
     const savedTabId = localStorage.getItem('vipauto_active_tab') || 'home';
-    const tabToActivate = document.querySelector(`.nav-tab[data-tab="${savedTabId}"]`);
+    const tabToActivate = document.querySelector(`.nav-link[data-tab="${savedTabId}"]`);
 
     if (tabToActivate && getComputedStyle(tabToActivate).display !== 'none') {
       state.activeTab = savedTabId;
     } else {
       state.activeTab = 'home';
     }
+    // Manually trigger the first tab switch to render content
+    handleTabSwitch(document.querySelector(`.nav-link[data-tab="${state.activeTab}"]`));
+
 
     // Global click handler for data-action and data-tab
     document.body.addEventListener('click', (e) => {
       const actionTarget = e.target.closest('[data-action]');
-      const tabTarget = e.target.closest('[data-tab]');
-      if (actionTarget) handleAction(actionTarget);
-      if (tabTarget) handleTabSwitch(tabTarget);
+      const tabTarget = e.target.closest('.nav-link[data-tab]');
+
+      if (tabTarget) {
+        e.preventDefault(); // Prevent default anchor behavior
+        handleTabSwitch(tabTarget);
+      }
+      if (actionTarget) {
+        handleAction(actionTarget);
+      }
     });
 
   } catch (error) {
@@ -51,8 +62,16 @@ function initAuth() {
 
   try {
     state.user = JSON.parse(userDataString);
-    document.getElementById('user-name-display').textContent = state.user.name;
-    document.body.classList.toggle('is-privileged', state.user.role === 'DIRECTOR' || state.user.role === 'SENIOR_MASTER');
+    const user = state.user;
+    // Populate sidebar user info
+    document.getElementById('user-name-display').textContent = user.name;
+    const roleDisplay = document.getElementById('user-role-display');
+    if(roleDisplay) roleDisplay.textContent = user.role;
+
+    const userAvatar = document.getElementById('user-avatar');
+    if(userAvatar) userAvatar.textContent = user.name.charAt(0);
+
+    document.body.classList.toggle('is-privileged', user.role === 'DIRECTOR' || user.role === 'SENIOR_MASTER');
   } catch(e) {
     logout();
     return false;

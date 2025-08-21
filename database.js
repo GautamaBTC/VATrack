@@ -63,25 +63,30 @@ const migrateUserData = async () => {
     console.log('[DB] Checking for user data migration...');
     const client = await pool.connect();
     try {
-        const { rows } = await client.query("SELECT login, password FROM users WHERE login = 'director'");
-        const director = rows[0];
+        const { rows: allUsers } = await client.query("SELECT login, password FROM users");
 
-        if (director && !director.password.startsWith('$2b$')) {
-            console.log('[DB] Old password format detected. Migrating user data...');
+        // Check if any user has an un-hashed password. This is a more robust check.
+        const needsMigration = allUsers.some(user => !user.password.startsWith('$2b$'));
+
+        if (needsMigration) {
+            console.log('[DB] Old password format detected. Migrating all user data...');
             await client.query('BEGIN');
 
-            const usersToUpdate = [
-                { oldLogin: 'director', newLogin: 'Chief.Orlov', newHash: '$2b$10$84KZgSt.ff9HxRH9r3gwoeiOWxEdhRDVRSIYdeUMfrmkZMvNrumC6' },
-                { oldLogin: 'vladimir.ch', newLogin: 'Senior.Vlad', newHash: '$2b$10$a6LiDKCDIx2og0OurlINnuXEeQSLSod7RIiz.D2Q6qS.gfN0Aoe9C' },
-                { oldLogin: 'vladimir.a', newLogin: 'Master.Vladimir', newHash: '$2b$10$FfGiyFpGSU/QWJnyi1MfyO/fV0t24g08Cn20JO6UVUjWfXi2TeZ.m' },
-                { oldLogin: 'andrey', newLogin: 'Master.Andrey', newHash: '$2b$10$7f.bppgfTDTCfCIXazUnnO/cyuvmtN0bTJEUCkdqH1mcGtkEtjiGC' },
-                { oldLogin: 'danila', newLogin: 'Master.Danila', newHash: '$2b$10$aqoFMafFJFCNsk9ObMyE9.M6sHcJMLm1IF5iAGoGnhWbW.F2FTv5y' },
-                { oldLogin: 'maxim', newLogin: 'Master.Maxim', newHash: '$2b$10$zINh15CF1qvguPHXwc6Bn.JK1WhsXbakNJa/N.loZUheGUoRsXTPi' },
-                { oldLogin: 'artyom', newLogin: 'Master.Artyom', newHash: '$2b$10$fPZ1F9DFYeJZXulbdSREa.zlSFq2I.hLL9qp8CGQAA3DeCnLn0/uK' }
-            ];
+            const usersToUpdate = {
+                'director': { newLogin: 'Chief.Orlov', newHash: '$2b$10$84KZgSt.ff9HxRH9r3gwoeiOWxEdhRDVRSIYdeUMfrmkZMvNrumC6' },
+                'vladimir.ch': { newLogin: 'Senior.Vlad', newHash: '$2b$10$a6LiDKCDIx2og0OurlINnuXEeQSLSod7RIiz.D2Q6qS.gfN0Aoe9C' },
+                'vladimir.a': { newLogin: 'Master.Vladimir', newHash: '$2b$10$FfGiyFpGSU/QWJnyi1MfyO/fV0t24g08Cn20JO6UVUjWfXi2TeZ.m' },
+                'andrey': { newLogin: 'Master.Andrey', newHash: '$2b$10$7f.bppgfTDTCfCIXazUnnO/cyuvmtN0bTJEUCkdqH1mcGtkEtjiGC' },
+                'danila': { newLogin: 'Master.Danila', newHash: '$2b$10$aqoFMafFJFCNsk9ObMyE9.M6sHcJMLm1IF5iAGoGnhWbW.F2FTv5y' },
+                'maxim': { newLogin: 'Master.Maxim', newHash: '$2b$10$zINh15CF1qvguPHXwc6Bn.JK1WhsXbakNJa/N.loZUheGUoRsXTPi' },
+                'artyom': { newLogin: 'Master.Artyom', newHash: '$2b$10$fPZ1F9DFYeJZXulbdSREa.zlSFq2I.hLL9qp8CGQAA3DeCnLn0/uK' }
+            };
 
-            for (const user of usersToUpdate) {
-                await client.query('UPDATE users SET login = $1, password = $2 WHERE login = $3', [user.newLogin, user.newHash, user.oldLogin]);
+            for (const oldLogin in usersToUpdate) {
+                const { newLogin, newHash } = usersToUpdate[oldLogin];
+                // Use a single UPDATE statement per user for clarity and atomicity.
+                // This is safer as it won't fail if a user was already partially renamed.
+                await client.query('UPDATE users SET login = $1, password = $2 WHERE login = $3', [newLogin, newHash, oldLogin]);
             }
 
             await client.query('COMMIT');
