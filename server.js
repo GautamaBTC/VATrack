@@ -106,20 +106,20 @@ app.post('/login', async (req, res) => {
         const userRecord = users[login];
 
         if (!userRecord) {
-            return res.status(401).json({ message: 'Invalid login or password' });
+            return res.status(401).json({ message: 'Неверный логин или пароль' });
         }
 
         const isMatch = await bcrypt.compare(password, userRecord.password);
 
         if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid login or password' });
+            return res.status(401).json({ message: 'Неверный логин или пароль' });
         }
 
         const token = jwt.sign({ login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
         res.json({ token, user: { login, name: userRecord.name, role: userRecord.role } });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ message: 'Server error during login' });
+        res.status(500).json({ message: 'Ошибка сервера при входе в систему' });
     }
 });
 
