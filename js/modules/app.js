@@ -34,13 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Global click handler for data-action and data-tab
     document.body.addEventListener('click', (e) => {
       const actionTarget = e.target.closest('[data-action]');
-      const tabTarget = e.target.closest('.nav-link[data-tab]');
+      const tabTarget = e.target.closest('[data-tab]');
 
-      if (tabTarget) {
-        e.preventDefault(); // Prevent default anchor behavior
+      // Check if the clicked element is a navigation element
+      if (tabTarget && (tabTarget.classList.contains('nav-link') || tabTarget.classList.contains('nav-tab'))) {
+        e.preventDefault();
         handleTabSwitch(tabTarget);
-      }
-      if (actionTarget) {
+      } else if (actionTarget) { // Ensure action clicks are handled separately
         handleAction(actionTarget);
       }
     });
