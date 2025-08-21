@@ -8,9 +8,6 @@
   --light-text: #1F2937;
   --light-text-muted: #6B7280;
   --light-accent: #2D63D8;
-  --light-sidebar-bg: #FFFFFF;
-  --light-sidebar-fg: #1F2937;
-  --light-sidebar-hover-bg: #F3F4F6;
 
   --dark-bg: #111827;
   --dark-panel-bg: #1F2937;
@@ -18,9 +15,6 @@
   --dark-text: #E5E7EB;
   --dark-text-muted: #9CA3AF;
   --dark-accent: #38BDF8;
-  --dark-sidebar-bg: #1F2937;
-  --dark-sidebar-fg: #E5E7EB;
-  --dark-sidebar-hover-bg: #374151;
 
   --gold: #FBBF24;
   --silver: #D1D5DB;
@@ -28,8 +22,7 @@
 
   --font-main: 'Inter', sans-serif;
   --header-height: 60px;
-  --sidebar-width-expanded: 250px;
-  --sidebar-width-collapsed: 80px;
+  --nav-height: 65px;
   --radius: 12px;
   --transition: all 0.2s ease-in-out;
 }

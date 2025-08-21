@@ -40,111 +40,7 @@ const tableExists = async (tableName) => {
 };
 
 /**
- * Checks if a specific column exists in a table
- * @param {string} tableName - The name of the table
- * @param {string} columnName - The name of the column
- * @returns {Promise<boolean>}
- */
-const columnExists = async (tableName, columnName) => {
-    const res = await query(`
-        SELECT EXISTS (
-            SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-            AND table_name = $1
-            AND column_name = $2
-        );
-    `, [tableName, columnName]);
-    return res.rows[0].exists;
-};
-
-
-const migrateUserData = async () => {
-    console.log('[DB] Checking for user data migration...');
-    const client = await pool.connect();
-    try {
-        const { rows: allUsers } = await client.query("SELECT login, password FROM users");
-
-        // Check if any user has an un-hashed password. This is a more robust check.
-        const needsMigration = allUsers.some(user => !user.password.startsWith('$2b$'));
-
-        if (needsMigration) {
-            console.log('[DB] Old password format detected. Migrating all user data...');
-            await client.query('BEGIN');
-
-            const usersToUpdate = {
-                'director': { newLogin: 'Chief.Orlov', newHash: '$2b$10$84KZgSt.ff9HxRH9r3gwoeiOWxEdhRDVRSIYdeUMfrmkZMvNrumC6' },
-                'vladimir.ch': { newLogin: 'Senior.Vlad', newHash: '$2b$10$a6LiDKCDIx2og0OurlINnuXEeQSLSod7RIiz.D2Q6qS.gfN0Aoe9C' },
-                'vladimir.a': { newLogin: 'Master.Vladimir', newHash: '$2b$10$FfGiyFpGSU/QWJnyi1MfyO/fV0t24g08Cn20JO6UVUjWfXi2TeZ.m' },
-                'andrey': { newLogin: 'Master.Andrey', newHash: '$2b$10$7f.bppgfTDTCfCIXazUnnO/cyuvmtN0bTJEUCkdqH1mcGtkEtjiGC' },
-                'danila': { newLogin: 'Master.Danila', newHash: '$2b$10$aqoFMafFJFCNsk9ObMyE9.M6sHcJMLm1IF5iAGoGnhWbW.F2FTv5y' },
-                'maxim': { newLogin: 'Master.Maxim', newHash: '$2b$10$zINh15CF1qvguPHXwc6Bn.JK1WhsXbakNJa/N.loZUheGUoRsXTPi' },
-                'artyom': { newLogin: 'Master.Artyom', newHash: '$2b$10$fPZ1F9DFYeJZXulbdSREa.zlSFq2I.hLL9qp8CGQAA3DeCnLn0/uK' }
-            };
-
-            for (const oldLogin in usersToUpdate) {
-                const { newLogin, newHash } = usersToUpdate[oldLogin];
-                // Use a single UPDATE statement per user for clarity and atomicity.
-                // This is safer as it won't fail if a user was already partially renamed.
-                await client.query('UPDATE users SET login = $1, password = $2 WHERE login = $3', [newLogin, newHash, oldLogin]);
-            }
-
-            await client.query('COMMIT');
-            console.log('[DB] User data migration successful.');
-        } else {
-            console.log('[DB] User data is already up-to-date. No migration needed.');
-        }
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('!!! USER DATA MIGRATION ERROR:', err);
-        process.exit(1);
-    } finally {
-        client.release();
-    }
-};
-
-
-const migrateForeignKeyConstraint = async () => {
-    console.log('[DB] Checking for foreign key constraint migration...');
-    const client = await pool.connect();
-    const constraintName = 'search_history_user_login_fkey';
-    try {
-        const res = await client.query(`
-            SELECT confupdtype
-            FROM pg_catalog.pg_constraint
-            WHERE conname = $1
-        `, [constraintName]);
-
-        // 'c' = cascade, 'a' = no action, 'r' = restrict, 'n' = set null, 'd' = set default
-        if (res.rows.length > 0 && res.rows[0].confupdtype !== 'c') {
-            console.log(`[DB] Foreign key constraint '${constraintName}' needs migration. Current type: ${res.rows[0].confupdtype}.`);
-            await client.query('BEGIN');
-            await client.query(`ALTER TABLE search_history DROP CONSTRAINT ${constraintName}`);
-            await client.query(`
-                ALTER TABLE search_history
-                ADD CONSTRAINT ${constraintName}
-                FOREIGN KEY (user_login)
-                REFERENCES users(login)
-                ON DELETE CASCADE ON UPDATE CASCADE
-            `);
-            await client.query('COMMIT');
-            console.log(`[DB] Foreign key '${constraintName}' migrated successfully to ON UPDATE CASCADE.`);
-        } else if (res.rows.length === 0) {
-            console.log(`[DB] Constraint '${constraintName}' not found. Assuming schema is up-to-date or new.`);
-        } else {
-            console.log(`[DB] Foreign key '${constraintName}' is already up-to-date.`);
-        }
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('!!! FOREIGN KEY MIGRATION ERROR:', err);
-        process.exit(1);
-    } finally {
-        client.release();
-    }
-};
-
-/**
- * Initializes the database schema and performs necessary migrations.
+ * Initializes the database schema from schema.sql if tables do not exist
  */
 const initSchema = async () => {
     const usersTableExists = await tableExists('users');
@@ -156,31 +52,11 @@ const initSchema = async () => {
             console.log('[DB] Schema initialized successfully.');
         } catch (err) {
             console.error('!!! SCHEMA INITIALIZATION ERROR:', err);
+            // If an error occurs, it might be best to stop the application
             process.exit(1);
         }
     } else {
-        console.log('[DB] Tables already exist. Checking for necessary migrations...');
-
-        // Migration 1: Add 'favorite' column to 'clients' table
-        const favoriteColumnExists = await columnExists('clients', 'favorite');
-        if (!favoriteColumnExists) {
-            console.log("[DB] Migrating schema: Adding 'favorite' column...");
-            try {
-                await query('ALTER TABLE clients ADD COLUMN favorite BOOLEAN DEFAULT FALSE;');
-                console.log("[DB] Schema migration for 'favorite' column successful.");
-            } catch (err) {
-                console.error("!!! MIGRATION ERROR ('favorite' column):", err);
-                process.exit(1);
-            }
-        } else {
-            console.log("[DB] 'favorite' column already exists. Skipping.");
-        }
-
-        // Migration 2: Ensure foreign key on search_history has ON UPDATE CASCADE
-        await migrateForeignKeyConstraint();
-
-        // Migration 3: Update user logins and passwords to new hashed format
-        await migrateUserData();
+        console.log('[DB] Tables already exist. Skipping schema initialization.');
     }
 };
 
@@ -216,19 +92,19 @@ module.exports = {
     FROM weekly_reports ORDER BY created_at DESC
   `),
   getClients: () => pool.query(`
-    SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", favorite, created_at AS "createdAt"
+    SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", created_at AS "createdAt"
     FROM clients ORDER BY created_at DESC
   `),
   findClientByPhone: async (phone) => {
     const { rows } = await pool.query(`
-      SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", favorite, created_at AS "createdAt"
+      SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", created_at AS "createdAt"
       FROM clients WHERE $1 = ANY(phone)
     `, [phone]);
     return rows[0];
   },
   searchClients: async (searchQuery) => {
     const { rows } = await pool.query(`
-        SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", favorite, created_at AS "createdAt"
+        SELECT id, name, phone, car_model AS "carModel", license_plate AS "licensePlate", created_at AS "createdAt"
         FROM clients WHERE name ILIKE $1 OR phone ILIKE $1 LIMIT 10
     `, [`%${searchQuery}%`]);
     return rows;

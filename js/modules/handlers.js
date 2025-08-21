@@ -73,7 +73,10 @@ export function handleAction(target) {
 
         flatpickrInstance.setDate([startDate, new Date()], true); // true to trigger onChange
     },
-    'close-week': () => finalizeWeek(),
+    'close-week': () => {
+        const financeTab = document.querySelector('[data-tab="finance"]');
+        if (financeTab) financeTab.click();
+    },
     'clear-history': () => openConfirmationModal({ title: 'Очистить историю?', text: 'Все архивные записи будут удалены.', onConfirm: () => state.socket.emit('clearHistory') }),
     'clear-data': () => openClearDataCaptchaModal(),
     'edit-order': () => {
@@ -103,28 +106,18 @@ export function handleAction(target) {
 }
 
 export function handleTabSwitch(target) {
-  if (!target) return;
   const tabId = target.dataset.tab;
-  if (state.activeTab === tabId && document.querySelector('.tab-content.active')) return;
+  if (state.activeTab === tabId) return;
 
   localStorage.setItem('vipauto_active_tab', tabId);
 
-  // Update active link in both sidebar and mobile tabs
-  document.querySelectorAll('.nav-link.active, .nav-tab.active').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll(`.nav-link[data-tab="${tabId}"], .nav-tab[data-tab="${tabId}"]`).forEach(el => el.classList.add('active'));
-
-  // Update main content visibility
+  document.querySelector('.nav-tab.active')?.classList.remove('active');
+  target.classList.add('active');
   document.querySelector('.tab-content.active')?.classList.remove('active');
+
   const newTabContent = document.getElementById(tabId);
   if (newTabContent) {
     newTabContent.classList.add('active');
-  }
-
-  // Update page title
-  const pageTitle = document.getElementById('page-title');
-  const newTitle = target.querySelector('span')?.textContent || 'Главная';
-  if(pageTitle) {
-    pageTitle.textContent = newTitle;
   }
 
   state.activeTab = tabId;

@@ -42,18 +42,17 @@ CREATE TABLE orders (
 
 CREATE TABLE search_history (
     id TEXT PRIMARY KEY,
-    user_login TEXT REFERENCES users(login) ON DELETE CASCADE ON UPDATE CASCADE,
+    user_login TEXT REFERENCES users(login) ON DELETE CASCADE,
     query TEXT NOT NULL,
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Seed initial users
--- Seed initial users with final, complex, hashed passwords
 INSERT INTO users (login, password, role, name) VALUES
-('Chief.Orlov', '$2b$10$84KZgSt.ff9HxRH9r3gwoeiOWxEdhRDVRSIYdeUMfrmkZMvNrumC6', 'DIRECTOR', 'Владимир Орлов'),
-('Senior.Vlad', '$2b$10$a6LiDKCDIx2og0OurlINnuXEeQSLSod7RIiz.D2Q6qS.gfN0Aoe9C', 'SENIOR_MASTER', 'Владимир Ч.'),
-('Master.Vladimir', '$2b$10$FfGiyFpGSU/QWJnyi1MfyO/fV0t24g08Cn20JO6UVUjWfXi2TeZ.m', 'MASTER', 'Владимир А.'),
-('Master.Andrey', '$2b$10$7f.bppgfTDTCfCIXazUnnO/cyuvmtN0bTJEUCkdqH1mcGtkEtjiGC', 'MASTER', 'Андрей'),
-('Master.Danila', '$2b$10$aqoFMafFJFCNsk9ObMyE9.M6sHcJMLm1IF5iAGoGnhWbW.F2FTv5y', 'MASTER', 'Данила'),
-('Master.Maxim', '$2b$10$zINh15CF1qvguPHXwc6Bn.JK1WhsXbakNJa/N.loZUheGUoRsXTPi', 'MASTER', 'Максим'),
-('Master.Artyom', '$2b$10$fPZ1F9DFYeJZXulbdSREa.zlSFq2I.hLL9qp8CGQAA3DeCnLn0/uK', 'MASTER', 'Артём');
+('director', 'Dir7wK9c', 'DIRECTOR', 'Владимир Орлов'),
+('vladimir.ch', 'Vch4R5tG', 'SENIOR_MASTER', 'Владимир Ч.'),
+('vladimir.a', 'Vla9L2mP', 'MASTER', 'Владимир А.'),
+('andrey', 'And3Z8xY', 'MASTER', 'Андрей'),
+('danila', 'Dan6J1vE', 'MASTER', 'Данила'),
+('maxim', 'Max2B7nS', 'MASTER', 'Максим'),
+('artyom', 'Art5H4qF', 'MASTER', 'Артём');
