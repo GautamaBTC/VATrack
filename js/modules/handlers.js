@@ -109,9 +109,9 @@ export function handleTabSwitch(target) {
 
   localStorage.setItem('vipauto_active_tab', tabId);
 
-  // Update active link in sidebar
-  document.querySelector('.nav-link.active')?.classList.remove('active');
-  target.classList.add('active');
+  // Update active link in both sidebar and mobile tabs
+  document.querySelectorAll('.nav-link.active, .nav-tab.active').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll(`.nav-link[data-tab="${tabId}"], .nav-tab[data-tab="${tabId}"]`).forEach(el => el.classList.add('active'));
 
   // Update main content visibility
   document.querySelector('.tab-content.active')?.classList.remove('active');
@@ -122,8 +122,9 @@ export function handleTabSwitch(target) {
 
   // Update page title
   const pageTitle = document.getElementById('page-title');
+  const newTitle = target.querySelector('span')?.textContent || 'Главная';
   if(pageTitle) {
-    pageTitle.textContent = target.querySelector('.sidebar-text').textContent;
+    pageTitle.textContent = newTitle;
   }
 
   state.activeTab = tabId;
