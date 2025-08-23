@@ -60,24 +60,9 @@ const initSchema = async () => {
     }
 };
 
-const resetDatabase = async () => {
-  console.log('[DB] Attempting to reset database...');
-  try {
-    await query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
-    console.log('[DB] Database reset successful.');
-    // After resetting, we must re-initialize the schema
-    await initSchema();
-    return { success: true, message: 'База данных успешно сброшена и пересоздана.' };
-  } catch (err) {
-    console.error('!!! DATABASE RESET ERROR:', err);
-    return { success: false, message: `Ошибка при сбросе базы данных: ${err.message}` };
-  }
-};
-
 module.exports = {
   // Initialization
   loadDB: initSchema,
-  resetDatabase, // Export the new function
 
   // Data Getters
   getUsers: async () => {

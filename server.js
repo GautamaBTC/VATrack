@@ -98,16 +98,6 @@ const broadcastUpdates = async () => {
     }
 };
 
-app.get('/reset-db-a1b2c3', async (req, res) => {
-  console.log('!!! Received request to reset database !!!');
-  const result = await db.resetDatabase();
-  if (result.success) {
-    res.status(200).send(`<h1>${result.message}</h1><p>Пожалуйста, перезагрузите страницу входа и попробуйте войти снова с оригинальными учетными данными.</p>`);
-  } else {
-    res.status(500).send(`<h1>${result.message}</h1>`);
-  }
-});
-
 app.post('/login', async (req, res) => {
   const { login, password } = req.body;
   const users = await db.getUsers();
